@@ -1,0 +1,109 @@
+{% extends "Blankdb/base.html" %}
+{% block title_local %}
+All isolates
+{% endblock %}
+
+{% block navSec-allIso %} <a class="navSecond nav-link active" href="{% url 'Blankdb:isolate_list' %}"> All isolates </a> {% endblock %}
+
+{% load static %}
+{% block head_static %}
+
+
+<script type="module" src="{% static 'Blankdb/javascript/isolateList.js' %}"></script>
+
+<link rel="stylesheet" href="{% static 'Blankdb/css/graph_timeOrLocStCount.css' %}">
+<script src="{% static 'Blankdb/javascript/simpleHelpers.js' %}"></script>
+
+<script src="{% static 'Blankdb/javascript/helps.js' %}"></script>
+
+<link rel="stylesheet" href="{% static 'Blankdb/css/isoViewComb.css' %}">
+<link rel="stylesheet" href="{% static 'Blankdb/css/index.css' %}">
+<link rel="stylesheet" href="{% static 'Blankdb/css/isolateTable.css' %}">
+<link rel="stylesheet" href="{% static 'Blankdb/css/graphicalView.css' %}">
+
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.2.0/jspdf.umd.min.js"></script>
+
+{% endblock %}
+
+
+{% block body_local %}
+{% load common %}
+
+
+
+<div class="m-2">
+<script type="text/javascript">
+
+	// import {doApLayout} from '{% static "layoutApCcTable" %}';
+
+
+
+	$(document).ready(function() {
+
+		Blankdb_bindEnterToSearch("filterIsolates");
+
+		// needs to be here for back to work. (because of history.pushstate).
+		$(window).on("popstate", function(e) {
+			   if (e.originalEvent.state !== null) {
+			   location.reload();
+			   }
+		 });
+		//doApLayout( JSON.parse('{{ isolates|escapejs }}'), 0, 1, JSON.parse('{{ request.session.apInfo|escapejs}}'), JSON.parse('{{ request.session.epiInfo|safe }}'));
+		$('#isolateTable').hide();
+
+		// console.log(window.location.search);
+
+		let isAnyRowForSearchAdded = Blankdb_handleBackPage({{dirColsInfo|safe}}, {{dirAps|safe}}, {{dirCcs|safe}}, {{serverStatusChoices|safe}}, {{assignStatusChoices|safe}}, {{privStatusChoices|safe}}, {{boolChoices|safe}});
+
+		if (isAnyRowForSearchAdded == true){ // get the searched data!
+			Blankdb_sortElemsAndSend('{% url 'Blankdb:search_isolateList' %}', 'theSearchTbl', {{dirColsInfo|safe}}, {{dirAps|safe}}, {{dirCcs|safe}}, {{serverStatusChoices|safe}}, {{assignStatusChoices|safe}}, {{privStatusChoices|safe}});
+
+		}
+		else if (isAnyRowForSearchAdded == false){ // url-search not present; add empty row in filter table & load initial data.
+			Blankdb_addRowToFilterTbl("theSearchTbl", {{dirColsInfo|safe}}, {{dirAps|safe}}, {{dirCcs|safe}}, {{serverStatusChoices|safe}}, {{assignStatusChoices|safe}}, {{privStatusChoices|safe}}, null, null, {{boolChoices|safe}});
+			Blankdb_getInitialData('{% url 'Blankdb:initial_isolates' %}', null,null,null,null, null);
+
+			// getInitialData (... )
+			// console.log("document ready!, call ajax to load and get data.");
+
+
+		}
+	});
+
+</script>
+
+
+
+<br>
+<div class="mx-auto" style="width: 200px;">
+	<h2 class="headingSpe"> All isolates </h2>
+</div>
+
+<script>
+$( function() {
+  $( "#datepicker" ).datepicker();
+} );
+</script>
+
+{% include 'Blankdb/filterIsolates.html' %}
+
+<br>
+<br>
+<br>
+
+<h3> List of isolates </h3>
+
+<div id="ajaxSearching">
+	<p> Searching . . . please wait. </p>
+</div>
+
+
+<div id="wrapper">
+	{% include 'Blankdb/isolateTable.html' %}
+</div>
+
+	{% include 'Blankdb/modal.html' %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,8 @@
+.close{
+ position: absolute;
+ top:2px;
+ right: 5px;
+ font-size:25px;
+ /* transform: rotate(45deg); /* will make it look like x */
+ cursor: pointer;
+}

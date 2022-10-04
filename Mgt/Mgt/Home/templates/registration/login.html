@@ -1,0 +1,42 @@
+{% extends "Home/base.html" %}
+
+{% block head_static %}
+
+	{% load static %}
+
+	<link rel="stylesheet" type="text/css" href="{% static 'Home/css/userHomePage.css' %}" />
+
+{% endblock %}
+
+{% block nav-login %} <a class="navFirst nav-link active" href="{% url 'login' %}">Login</a> {% endblock %}
+
+{% block titleName %}
+	Login
+{% endblock %}
+
+{% block page_content %}
+	<div class="container container-fluid">
+		<br>
+		<h2 class="title is-3"> Login </h2>
+
+
+
+
+
+			<form method="post" action="">
+				{% csrf_token %}
+				<table>
+					<caption class="addToTop"> Enter your username and password to continue: </caption>
+					{{ form.as_table }}
+				</table>
+
+				<input type="submit" value="Login" class="btn btn-default">
+			</form>
+
+
+
+		<br>
+
+		<a class="blueLink" href="{% url 'password_reset' %}">Forgot username or password</a>
+	</div>
+{% endblock %}

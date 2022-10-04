@@ -1,0 +1,11 @@
+.tblHeaderRow{
+	background-color: #d3cade;
+}
+
+.forScroll{
+	overflow: scroll;
+}
+
+.tableCenter td{
+	text-align:center;
+}

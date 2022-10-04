@@ -1,0 +1,196 @@
+#!/bin/bash
+
+#CHANGE below to select where conda is initialised on your system
+source ~/.bash_profile
+#source ~/.zshrc
+#source ~/.bashrc
+
+
+#CHANGE species name to be used for database, should match kraken result for contamination checking
+db_name='blankdb'
+appname='Blankdb'
+dbuser='postgres'
+
+#CHANGE species name to be used for database, should match kraken result for contamination checking
+species='Species name'
+
+#CHANGE location for setup files to be stored for use later in the script
+ref_files="/path/to/tmp_setup_files/"
+
+#CHANGE full path to modified settings file
+settingfile="/path/to/MGT-local/Mgt/Mgt/Mgt/settings_file.py"
+
+#CHANGE full path to reference genome
+ref_genome="/path/to/reference_genome.fasta"
+
+#CHANGE full path to lociLocationsInRef file
+lociloc="/path/to/lociLocationsInRef.txt"
+
+#CHANGE full path to lociLocationsInRef file
+scheme_accessions="/path/to/Schemes"
+
+#CHANGE full path to top folder of MGT repo
+path_mgt="/path/to/MGT/"
+
+#CHANGE abbreviated settings file name
+settings_prefix="Mgt.settings_local_mp"
+
+#CHANGE location to store single file of reference alleles
+refallalleles="/Users/z3521839/Library/CloudStorage/OneDrive-UNSW/MGT/genome_query_testing/species_specific_alleles/"
+
+#CHANGE name of conda environment
+condaenv="mgtenv"
+
+#CHANGE number of levels in MGT scheme
+schemeno=5
+
+#CHANGE number and cutoff of ODCs generated from largest scheme
+odcls="1,2,5,10"
+
+#CHANGE login details of initial user
+superusername="Ref"
+superuseremail="ref@ref.ref"
+
+################################# EDIT ABOVE THIS LINE ONLY  ###############################################################
+
+echo "creating database"
+dropdb -U postgres ${db_name}
+createdb -U postgres ${db_name}
+psql -U postgres -d ${db_name} -c "grant all privileges on database ${db_name} to mlstwebsite"
+psql -U postgres -d ${db_name} -c "grant all privileges on database ${db_name} to postgres"
+sleep 2
+
+cd ${path_mgt}
+
+conda activate ${condaenv};
+
+cd Mgt/Mgt
+
+mgt_home=$(pwd)'/'
+
+cp -r Blankdb ${appname}
+
+for file in `find $db_name"/" -name "*Blankdb*" -type d -maxdepth 3`; do mv $file ${file/Blankdb/$appname}; done
+
+for file in `find $db_name"/" -type f`; do sed -i '' "s/Blankdb/$appname/g" $file; done
+
+for file in `find $db_name"/" -type f`; do sed -i '' "s/blankdb/$db_name/g" $file; done
+
+
+echo PAUSE
+
+
+cd $mgt_home"Scripts"
+
+python make_setup_files.py -r $ref_genome -a $appname -d $db_name -s "$species" -t $ref_files --allref $refallalleles --allele_locations $lociloc --schemeno $schemeno --schemeaccessions $scheme_accessions --mgt1is7gene --odcls $odcls --settings $settingfile
+
+echo "made setup files"
+
+cd ../
+python manage.py makemigrations --settings $settings_prefix $appname
+python manage.py makemigrations --settings $settings_prefix --merge
+python manage.py migrate --settings $settings_prefix --database=$db_name
+python manage.py makemigrations --settings $settings_prefix --merge
+python manage.py migrate --settings $settings_prefix
+
+
+echo "migrated"
+
+cd $mgt_home"Scripts";
+python populateReference.py ../ Mgt $appname $ref_files"refFileInfo.json" $settings_prefix
+echo "added ref"
+python populateLoci.py ../ Mgt $appname $ref_files"lociLocationsInRef.txt" $settings_prefix
+python populateSchemes.py ../ Mgt $appname $ref_files"schemesInfo.txt" $ref_files"Schemes" $settings_prefix
+sleep 2
+
+echo ccs
+cd $mgt_home"Scripts"
+python setUpCcs.py ../ Mgt $appname $ref_files"tables_ccs.txt" $settings_prefix >> ../$appname""/models/autoGenCcs.py
+sleep 2
+
+cd ../
+python manage.py makemigrations --settings $settings_prefix $appname
+python manage.py migrate --settings $settings_prefix --database=$db_name
+sleep 1
+cd $mgt_home"Scripts"
+
+echo aps
+cd $mgt_home"Scripts"
+python setUpApsAndMgt.py ../ Mgt $appname $ref_files"tables_aps.txt" $settings_prefix > ../$appname""/models/autoGenAps.py
+
+echo -e "from django.db import models\nfrom .defModels import *\nfrom .autoGenCcs import *\n\n\n$(cat ../$appname'/models/autoGenAps.py')" > ../$appname"/models/autoGenAps.py"
+sleep 4
+
+
+sed -i -e 's/#replace //g' ../$appname""/models/projModels.py
+cd ../
+python manage.py makemigrations --settings $settings_prefix $appname
+read  -p "Press enter after fixing ap_N migration order problem" mainmenuinput
+python manage.py migrate --settings $settings_prefix --database=$db_name
+sleep 1
+cd $mgt_home"Scripts"
+
+## ??? sed -i -e 's/#replace //g' ../$appname""/views/FuncsAuxAndDb/mgt9Aps.py
+
+echo alleles
+mkdir $mgt_home'/Alleles/'
+cd $mgt_home"Scripts"
+python addAlleles.py ../ Mgt $appname $ref_files"/"$appname"_alleles/" $settings_prefix;
+python addSnps.py ../ Mgt $appname $ref_files"/snpMuts.txt" $settings_prefix
+sleep 2
+
+echo mapping
+python addAllelicProfiles.py ../ Mgt $appname $ref_files"schemeToApMapping.txt" $ref_files"AllelicProfiles/" $settings_prefix
+sleep 2
+
+echo "add clonal complexes"
+cd $mgt_home"Scripts";
+python addClonalComplexes.py ../ Mgt $appname  $ref_files"ccInfo.txt"  $ref_files"ClonalComplexes/" $settings_prefix
+sleep 2;
+
+echo "add ref user"
+cd ..
+python manage.py createsuperuser --settings $settings_prefix --username $superusername --email $superuseremail
+
+sed -i '' "s/#replace//g" $mgt_home"/$appname/models/projModels.py"
+python manage.py makemigrations --settings $settings_prefix $appname
+python manage.py migrate --settings $settings_prefix --database=$db_name
+sleep 1
+
+cd $mgt_home"Scripts"
+
+
+echo "add reference and metadata info"
+python addIsolates.py ../ Mgt $appname $ref_files"isolate_info.tab" $settings_prefix
+python addMgts.py ../ Mgt $appname $ref_files"mgt_annotations.tab" $settings_prefix
+sleep 2
+
+echo "add view table"
+cd $mgt_home"Scripts"
+python genViewSqlAndClass.py ../ Mgt $appname $dbuser $settings_prefix
+sleep 1
+head -5 $mgt_home"$appname/models/autoGenViews.py" > views_head
+sleep 1
+cat $mgt_home"Scripts/views_head" $mgt_home"Scripts/autoGenView" > autoGenViews.py;
+mv $mgt_home"Scripts/autoGenViews.py" $mgt_home"/$appname/models"
+
+sleep 1
+rm views_head
+psql -U postgres -d ${db_name} -f ./runOnDb.sql
+
+
+cd ../
+python manage.py makemigrations --settings $settings_prefix $appname
+python manage.py migrate --settings $settings_prefix --database=$db_name
+sleep 1
+cd $mgt_home"Scripts"
+
+cd ../
+
+echo "finished"
+
+python manage.py makemigrations --settings $settings_prefix
+python manage.py migrate --settings $settings_prefix
+
+python manage.py runserver --settings $settings_prefix
+

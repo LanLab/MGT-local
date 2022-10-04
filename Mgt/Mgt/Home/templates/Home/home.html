@@ -1,0 +1,49 @@
+{% extends "Home/base.html" %}
+{% block titleName %}
+Manage projects
+{% endblock %}
+
+
+{% block nav-project %} <a class="navFirst nav-link active" href="{% url 'Home:home' %}">Projects</a> {% endblock %}
+
+{% block page_content %}
+<div class="container-fluid">
+	<br>
+	<h2 class="heading2">  My projects </h2>
+	<br>
+
+	{% for appName, dict_counts in userStats.items %}
+
+		{% if appName != 'ShigEiFinder' %}
+			<h3> <a  class="blueLink" href="{% url dict_counts.appName|add:":project_list"  %}"> {{ appName|safe }} </a> </h3>
+
+			<div class="container">
+				{% if dict_counts.numProjects > 0 %}
+
+					<ul class="list-group">
+						<li class="list-group-item d-flex justify-content-between align-items-center projectCardBg">
+		    				Number of projects
+		    				<span class="badge badge-dark badge-pill"> {{ dict_counts.numProjects }}</span>
+		  				</li>
+
+		  				<li class="list-group-item d-flex justify-content-between align-items-center projectCardBg">
+		    				Number of isolates
+		    				<span class="badge badge-dark badge-pill"> {{ dict_counts.numIsolates }}</span>
+		  				</li>
+
+					</ul>
+
+
+				{% else %}
+
+					No projects here.
+
+				{% endif %}
+			</div>
+		{% endif %}
+
+	{% endfor %}
+
+
+</div>
+{% endblock %}

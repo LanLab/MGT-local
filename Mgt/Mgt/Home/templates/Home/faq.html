@@ -1,0 +1,23 @@
+{% extends "Home/base.html" %}
+{% block titleName %}
+FAQ
+{% endblock %}
+
+{% block nav-faq %} <a class="navFirst nav-link active" href="{% url 'Home:faq' %}">Docs</a> {% endblock %}
+
+
+{% block page_content %}
+
+	<br>
+	<div class="container">
+		<h2 class="heading2"> Documentation </h2>
+		Our documentation is hosted on readthedocs, where <a href="https://mgt-docs.readthedocs.io/en/latest/" target="_blank" class="blueLink" scrolling='no'> it can also be viewed directly</a>.
+		<br>
+		<br>
+		<iframe class="docsIframe" src="https://mgt-docs.readthedocs.io/en/latest/" title="MGT documentation"></iframe>
+
+		<br>
+
+			<!-- p> Web application built by Sandeep Kaur (sandeep.kaur@unsw.edu.au). </p -->
+	</div>
+{% endblock %}

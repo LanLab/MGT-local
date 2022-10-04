@@ -1,0 +1,86 @@
+{% extends "Home/base.html" %}
+{% block titleName %}
+Home
+
+{% endblock %}
+
+{% block nav-species %} <a class="navFirst nav-link active" href="{% url 'Home:index' %}">Species</a> {% endblock %}
+
+<style>
+	.addedPadding {
+		width: 600px; padding: 5px;
+		margin: 20px 0px 100px 10px;
+	}
+</style>
+
+{% block page_content %}
+	{% load static %}
+	<link rel="stylesheet" type="text/css" href="{% static 'Home/css/userHomePage.css' %}">
+
+	<br>
+	<div class="container contiainer-fluid">
+		<h2 class="h2 heading2"> Current database statistics: </h2>
+		<br>
+		{% for appName, dict_vals in stats.items %}
+		{% if appName != 'ShigEiFinder' %}
+		<div class="card">
+				{# { appName } #}
+				{% if dict_vals %}
+
+					<!-- <article class="tile notification is-success"> -->
+						<div class="card-header">
+							<h4> <a  title="Click to view details" class="cardHeading" href="{% url appName|add:':index'  %}"> {{ dict_vals.organism|safe  }} </a> </h4>
+						</div>
+							<div class="card-body">
+
+								<table>
+									<tr>
+										<td> <i>   Up and running </i> </td>
+										<td> </td>
+									</tr>
+									<tr>
+										<td> Total public isolates: </td>
+										<td> {{ dict_vals.num_publicIsolates }} </td>
+									</tr>
+								</table>
+								<br>
+								{% if dict_vals.retrievalFreq == None %}
+								<small>Automatic retrival of isolate from NCBI not yet set up.</small>
+								{% else %}
+								<small>Reads from NCBI are retrieved every {{dict_vals.retrievalFreq}}. The metadata associated with these isolates are imported into MGTdb without any modifications.</small>
+								{% endif %}
+							</div>
+
+					<!-- </article> -->
+
+
+				{% else %}
+
+					<div class="card-header">
+						{% if dict_vals.organism %}
+							<h5> {{ dict_vals.organism|safe  }} </h5>
+						{% else %}
+							<h5> {{ appName }} </h5>
+						{% endif %}
+					</div>
+
+					<div class="card-body">
+						<div class="content">
+							<p> <i> Not up and running </i></p>
+						</div>
+					</div>
+
+
+				{% endif %}
+
+
+		</div>
+		{% endif %}
+		<br>
+		{% endfor %}
+	</div>
+
+
+
+
+{% endblock %}

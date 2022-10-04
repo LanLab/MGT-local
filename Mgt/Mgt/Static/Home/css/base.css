@@ -1,0 +1,84 @@
+body{
+	background-color: #edebd9;
+}
+
+.docsIframe {
+	width: 100%;
+	height: 800px;
+}
+
+@media screen and (max-width: 480px) {
+    img {
+         width: 400px;
+    }
+}
+
+
+.jumbotronOwn h1{
+	color: #ad974f;
+	font-weight: 600;
+}
+
+.jumbotronOwn p{
+	color: #8e793e;
+	font-size: 24px;
+}
+
+.jumbotronOwn{
+	 background-color: #014747; /* 'forest green'; /* white; /* #231F20; /* #edebd9; */
+	 padding-bottom: 10px;
+	 padding-top: 10px;
+	 margin-bottom:0;
+}
+
+.navBarFirst{
+	background-color: #037272;
+}
+
+.navFirst{
+	color: beige;
+}
+
+.navFirst.active{
+	background-color: #00848c !important;
+	color: white !important;
+}
+
+.navFirst.nav-link:hover{
+	color:white !important;
+}
+
+.container:after, .container:before {
+    display: table;
+    content: '';
+    clear: both;
+    box-sizing: border-box;
+}
+
+.heading2 {
+	color: #2b4251; /* #64485c; */
+}
+
+.btn-default {
+	background-color: #037272;
+	color:beige;
+	border-color: #037272;
+}
+
+.btn-default:hover {
+	background-color: #00848c;
+	color:white;
+	border-color: #00848c;
+}
+
+.blueLink {
+	color: #037272;
+	text-decoration: underline;
+}
+.blueLink:hover {
+	color: #037272;
+}
+
+.projectCardBg {
+	background-color: #cce2e2; 
+}

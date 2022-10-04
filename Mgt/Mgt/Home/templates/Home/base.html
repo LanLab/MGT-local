@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	{% load static %}
+
+	<script
+	  src="https://code.jquery.com/jquery-3.4.1.min.js"
+	  integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+	  crossorigin="anonymous"></script>
+	<script
+	  src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+	  integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+	  crossorigin="anonymous"></script>
+
+	<!-- script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script-->
+
+	<!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous"> -->
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+
+
+	<!-- script type="text/javascript" src="{% static 'Home/javascript/popper.min.js' %}"></script-->
+	<script type="text/javascript" src="{% static 'Home/javascript/bootstrap4.3.1/bootstrap.bundle.min.js' %}"></script>
+	<link rel="stylesheet" href="{% static 'Home/css/bootstrap4.3.1/bootstrap.min.css' %}">
+	<script type="text/javascript" src="{% static 'Home/javascript/bootstrap4.3.1/bootstrap.min.js' %}"></script>
+	<!-- script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script -->
+
+	<script defer src="{% static 'Home/javascript/fontawesome5.12.0/all.js' %}"></script>
+
+
+	<!-- link rel="stylesheet" type="text/css" href="{% static 'Home/javascript/lib/DataTables/datatables.min.js' %}"/>
+	<script type="text/javascript" src="{% static 'Home/javascript/lib/DataTables/datatables.min.js' %}"></script -->
+	<link rel="stylesheet" type="text/css" href="{% static 'Home/css/base.css' %}">
+
+
+	{% block head_static %}{% endblock %}
+
+
+	<title>
+		MGTdb - {% block titleName %} {% endblock %}
+	</title>
+</head>
+
+
+<body>
+	{% load for_display %}
+
+	<div class="jumbotron jumbotronOwn">
+		<img src="{% static 'Home/images/header_v2.png'%}" height="150px">
+		<!-- div class="container">
+			<img src="{% static 'Home/images/logo_v36.png'%}" height="200" align="left">
+				
+			<h1 class="display-4">Multilevel Genome Typing</h1>
+			<p class="lead">A database for cataloging microbes</p>
+
+		</div -->
+	</div>
+
+	<ul class="nav nav-tabs navBarFirst">
+		<li class="nav-item">
+			{% block nav-about %} <a class="navFirst nav-link" href="{% url 'Home:about' %}">About</a> {% endblock %}
+		</li>
+		<li class="nav-item">
+			{% block nav-species %} <a class="navFirst nav-link" href="{% url 'Home:index' %}">Species</a> {% endblock %}
+		</li>
+		{% if user.is_authenticated %}
+			<li class="nav-item">
+				{% block nav-project %} <a class="navFirst nav-link" href="{% url 'Home:home' %}">Projects</a> {% endblock %}
+			</li>
+			<li class="nav-item">
+				<a class="navFirst nav-link" href="{% url 'logout' %}"> Logout </a>
+			</li>
+		{% else %}
+			<li class="nav-item">
+				{% block nav-login %} <a class="navFirst nav-link" href="{% url 'login' %}">Login</a> {% endblock %}
+			</li>
+			<li class="nav-item">
+				{% block nav-register %} <a class="navFirst nav-link" href="{% url 'django_registration_register' %}">Register</a> {% endblock %}
+			</li>
+		{% endif %}
+		<li class="nav-item">
+			{% block nav-contact %} <a class="navFirst nav-link" href="{% url 'Home:contact' %}">Contact us</a> {% endblock %}
+		</li>
+		<li class="nav-item">
+			{% block nav-faq %} <a class="navFirst nav-link" href="{% url 'Home:faq' %}">Docs</a> {% endblock %}
+		</li>
+	</ul>
+
+
+	{% block page_content %} {% endblock %}
+</body>
+
+</html>

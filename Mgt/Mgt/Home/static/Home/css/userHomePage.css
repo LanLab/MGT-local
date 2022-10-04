@@ -1,0 +1,28 @@
+.addToTop {
+	caption-side: top;
+}
+
+.hidden { display: none; }
+
+.errorlist.nonfield {
+	color: red;
+}
+
+
+.cardHeading {
+	color: #2b4251; /* #83677B; */
+	TEXT-DECORATION: none;
+}
+
+.cardHeading:hover {
+	color: #2b4251;
+	TEXT-DECORATION: underline;
+}
+
+.card-header {
+  background-color: #aec7b7;
+}
+
+.card-body {
+	background-color: #f0efe0;
+}

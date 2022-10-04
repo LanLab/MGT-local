@@ -1,0 +1,41 @@
+{% extends "Home/base.html" %}
+{% block titleName %}
+Home
+{% endblock %}
+
+{% block nav-contact %} <a class="navFirst nav-link active" href="{% url 'Home:contact' %}">Contact us</a> {% endblock %}
+
+{% block page_content %}
+
+	<br>
+	<div class="container">
+		<h2 class="heading2"> Contact us </h2>
+		<p> Contact us with any queries, comments or suggestions! </p>
+		<br>
+
+		<div class="contianer">
+			<b>Prof. Ruiting Lan </b> <br>
+			r.lan@unsw.edu.au
+			<br>
+			<br>
+
+			<b> Dr. Michael Payne </b> <br>
+			michael.payne@unsw.edu.au
+			<br>
+			<br>
+
+
+		</div>
+		<br>
+
+		<p> For any technical queries please contact: </p>
+		<br>
+
+		<div class="contianer">
+			<b> Sandeep Kaur </b> <br>
+			sandeep.kaur@unsw.edu.au
+		</div>
+
+			<!-- p> Web application built by Sandeep Kaur (sandeep.kaur@unsw.edu.au). </p -->
+	</div>
+{% endblock %}

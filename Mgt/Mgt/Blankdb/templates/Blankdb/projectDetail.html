@@ -1,0 +1,165 @@
+{% extends "Blankdb/base.html" %}
+{% block title_local %}
+Home
+{% endblock %}
+
+
+
+{% load static %}
+{% block head_static %}
+
+<script type="module" src="{% static 'Blankdb/javascript/projectDetail.js' %}"></script>
+
+
+<link rel="stylesheet" href="{% static 'Blankdb/css/graph_timeOrLocStCount.css' %}">
+
+<script src="{% static 'Blankdb/javascript/simpleHelpers.js' %}"></script>
+
+
+
+<script src="{% static 'Blankdb/javascript/helps.js' %}"></script>
+
+<link rel="stylesheet" href="{% static 'Blankdb/css/isoViewComb.css' %}">
+<link rel="stylesheet" href="{% static 'Blankdb/css/index.css' %}">
+<link rel="stylesheet" href="{% static 'Blankdb/css/isolateTable.css' %}">
+
+<link rel="stylesheet" href="{% static 'Blankdb/css/graphicalView.css' %}">
+
+
+<script src="https://d3js.org/d3.v6.min.js"></script>
+
+
+
+{% endblock %}
+
+
+{% block body_local %}
+{% load common %}
+<div class="container-fluid">
+	<script type="text/javascript">
+
+
+		$(window).on("popstate", function(e) {
+			   if (e.originalEvent.state !== null) {
+			   location.reload();
+			   }
+		 });
+
+
+		$(document).ready(function() {
+
+			Blankdb_bindEnterToSearch("filterIsolates");
+
+			//doApLayout( JSON.parse('{{ isolates|escapejs }}'), 0, 1, JSON.parse('{{ request.session.apInfo|escapejs}}'), JSON.parse('{{ request.session.epiInfo|safe }}'));
+			$('#isolateTable').hide();
+
+			/* addRowToTbl(searchTbl,
+			JSON.parse('{{isoHeader|escapejs}}'), JSON.parse('{{apHeader|escapejs}}'), JSON.parse('{{ccHeader|escapejs}}'), JSON.parse('{{epiHeader|escapejs}}'),
+			JSON.parse('{{locHeader|escapejs}}'),
+			JSON.parse('{{islnHeader|escapejs}}'));
+			console.log("document ready!, call ajax to load and get data."); */
+			let isAnyRowForSearchAdded = Blankdb_handleBackPage({{dirColsInfo|safe}}, {{dirAps|safe}}, {{dirCcs|safe}}, {{serverStatusChoices|safe}}, {{assignStatusChoices|safe}}, {{privStatusChoices|safe}}, {{boolChoices|safe}});
+
+
+			if (isAnyRowForSearchAdded == true){
+				Blankdb_sortElemsAndSend('{% url 'Blankdb:search_projectDetail' %}', 'theSearchTbl', {{dirColsInfo|safe}}, {{dirAps|safe}}, {{dirCcs|safe}}, {{serverStatusChoices|safe}}, {{assignStatusChoices|safe}}, {{privStatusChoices|safe}});
+			}
+			else {
+				Blankdb_addRowToFilterTbl("theSearchTbl", {{dirColsInfo|safe}}, {{dirAps|safe}}, {{dirCcs|safe}}, {{serverStatusChoices|safe}}, {{assignStatusChoices|safe}}, {{privStatusChoices|safe}}, null, null, {{boolChoices|safe}});
+				Blankdb_getInitProjData('{% url 'Blankdb:initial_projectIsolates' %}', '{{ object.id }}',null,null,null,null);
+			}
+
+
+
+
+		});
+
+	</script>
+
+	<div>
+		<br>
+		<h2 class="speHeading"> Project details: {{ object.identifier }} </h2>
+		<br>
+		<div style="max-width: 60%">
+			<table class="table table-sm table-bordered">
+				<tr>
+					<td><i> Date created </i></td>
+					<td> {{ object.date_created }} </td>
+				</tr>
+				<tr>
+					<td><i> Date modified </i></td>
+					<td> {{ object.date_modified }} </td>
+				</tr>
+
+				<tr>
+					<td><i> Total number of isolates </i></td>
+					<td> {{ object.isolate_set.count }} </td>
+				</tr>
+			</table>
+
+			<a href="{% url 'Blankdb:project_edit' project.id %}"  class="btn btn-spe-edit btn-sm">Edit</a>
+
+			<a href="{% url 'Blankdb:project_delete' project.id %}" class="btn btn-spe-delete btn-sm">Delete</a>
+
+			<a href="{% url 'Blankdb:project_list' %}" class="btn btn-default-outline-spe btn-sm">Back</a>
+			<br>
+			<br>
+
+			<b> Allelic profile assignments <button type="button" class="btn" data-toggle="modal" data-target="#exampleModal" data-whatever="@projDwnldAps" onclick="theHelpFns(this);"><span class='fas fa-info-circle'> </span></button></b>
+			{% if projApFns %}
+				<ul>
+					{% for projApFn in projApFns %}
+						<li> <a href="{% url 'Blankdb:downloadDbDump' projApFn|filenameOnly %}"> {{ projApFn|filenameOnly }} </a> </li>
+					{% endfor %}
+				</ul>
+			{% else %}
+				<i> No files available to download at the moment. </i>
+			{% endif %}
+
+		</div>
+
+		<br>
+		<br>
+		<br>
+
+
+		<h3 class="speHeading"> Isolates in this project</h3>
+
+		<form action="{% url 'Blankdb:isolate_create' %}" method="get">
+			<input type="hidden" name="project" value={{ object.id }}>
+			<input class="btn speLink" type="submit" value="+ Upload a new isolate">
+		</form>
+
+		<form action="{% url 'Blankdb:isolate_create_bulk_md' %}" method="get">
+			<input type="hidden" name="project" value={{ object.id }}>
+			<input class="btn speLink" type="submit" value="+ Upload multiple isolates">
+		</form>
+
+		<br>
+		<br>
+
+		<div>
+
+			<table id="searchTbl" class="table is-bordered">
+			</table>
+
+		</div>
+
+		{% include 'Blankdb/filterIsolates.html' %}
+
+		<br>
+		<br>
+
+		<div id="wrapper">
+			{% include 'Blankdb/isolateTable.html' %}
+		</div>
+
+		<div id="ajaxSearching">
+			<p> Searching . . . please wait. </p>
+		</div>
+
+
+	</div>
+	{% include 'Blankdb/modal.html' %}
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "Home/base.html" %}
+{% block titleName %}
+Home
+{% endblock %}
+
+
+{% block nav-about %} <a class="navFirst nav-link active" href="{% url 'Home:about' %}">About</a> {% endblock %}
+
+
+
+{% block page_content %}
+	<br>
+	<div class="container container-fluid">
+		<h2 class="h2 heading2"> What is MGT? </h2>
+		<br>
+		<p class="text-justify"> <em> Multilevel Genome Typing (MGT)</em> is a novel <em> Multi-Locus Sequence Type (MLST) </em>  based strain classification system for bacterial isolates. </p>
+
+		<p class="text-justify"> The identity of each strain is defined by a string of nine sequence types (ST) called a genome type (GT). Each ST within a GT classifies an isolate at a different resolution. The sizes and resolutions of these schemes range from the classical 7 gene MLST schemes (MGT1, low resolution) to core genomes including core intergenic regions (MGT9, very high resolution). This range of resolutions allows the MGT to identify the medium to long term relationships between isolates as well as very short term relationships required for outbreak detection in one string of numbers. <i> Importantly, once they are defined - GTs will not change. </i> This stability allows communication and interpretation of strain relatedness to be standardised between studies and jurisdictions. </p>
+
+		<p class="text-justify"> This website contains implementations of the MGT for various species. The MGT and metadata is searchable to allow identification of GTs associated with spatial, temporal or clinical characteristics. </p>
+		<br>
+
+	</div>
+	<br>
+	<br>
+
+{% endblock %}

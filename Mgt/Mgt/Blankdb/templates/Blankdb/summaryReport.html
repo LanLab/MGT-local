@@ -1,0 +1,292 @@
+{% extends "Blankdb/base.html" %}
+{% block title_local %}
+Summary report
+{% endblock %}
+
+{% block navSec-sumRep %} <a class="navSecond nav-link active" href="{% url 'Blankdb:summaryReport' %}"> Summary report </a> {% endblock %}
+
+{% load static %}
+{% block head_static %}
+
+
+
+<script src="{% static 'Blankdb/javascript/simpleHelpers.js' %}"></script>
+
+<script src="{% static 'Blankdb/javascript/helps.js' %}"></script>
+
+<link rel="stylesheet" href="{% static 'Blankdb/css/index.css' %}">
+
+<link rel="stylesheet" href="{% static 'Blankdb/css/downloadReport.css' %}">
+
+
+
+<script src="https://d3js.org/d3.v6.min.js"></script>
+
+<!--script src="https://cdnjs.cloudflare.com/ajax/libs/canvg/3.0.7/umd.min.js" integrity="sha512-/s6CoG5ITB6327e5PitHYHqmw+XS9ynpBQ0RJtDEHjGnqld6e4V6F5Up+Q+IuavD4Na4vfmKAkuanctzsiMA2Q==" crossorigin="anonymous"></script-->
+<!-- script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js" integrity="sha512-s/XK4vYVXTGeUSv4bRPOuxSDmDlTedEpMEcAQk0t/FMd9V6ft8iXdwSBxV0eD60c6w/tjotSlKu9J2AAW1ckTA==" crossorigin="anonymous"></script-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js" integrity="sha512-pdCVFUWsxl1A4g0uV6fyJ3nrnTGeWnZN2Tl/56j45UvZ1OMdm9CIbctuIHj+yBIRTUUyv6I9+OivXj4i0LPEYA==" crossorigin="anonymous"></script>
+<script src="{% static 'Blankdb/javascript/html2canvas.min.js' %}"></script>
+<!-- script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.5.0-alpha1/html2canvas.min.js" integrity="sha512-Ih/6Hivj+361PNhdTq03BrGbzCpetyokxTKSqohHw8GSsGD6jGzp4E5Wl8nayPWN3iUpZpfRNE/25q5BuaUd8Q==" crossorigin="anonymous"></script-->
+<!-- script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.5.0-alpha1/html2canvas.svg.min.js" integrity="sha512-u2n6gf0PURpffnX+57P365Xv/7HA7gsJcb8EIBckbmYpBPL8Sbt7y9DfmH1+LyfDzd79S0Ulx4k4XHxfv4a0tQ==" crossorigin="anonymous"></script-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/promise-polyfill/8.2.0/polyfill.min.js" integrity="sha512-YK+bAjUuYdjPksbGQIIIsUn5hgYFsc+nXgx21Wwby9Mv+rJd8WZH2FRe1RdlTjFu1vxlGia9/RqmUMcZtX+BrA==" crossorigin="anonymous"></script>
+
+<!--script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.2.6/purify.min.js" integrity="sha512-rXAHWSMciPq2KsOxTvUeYNBb45apbcEXUVSIexVPOBnKfD/xo99uUe5M2OOsC49hGdUrkRLYsATkQQHMzUo/ew==" crossorigin="anonymous"></script-->
+<!-- script src="//cdnjs.cloudflare.com/ajax/libs/canvg/3.0.7/umd.min.js" integrity="sha512-/s6CoG5ITB6327e5PitHYHqmw+XS9ynpBQ0RJtDEHjGnqld6e4V6F5Up+Q+IuavD4Na4vfmKAkuanctzsiMA2Q==" crossorigin="anonymous"></script-->
+<!-- script src="https://cdnjs.cloudflare.com/ajax/libs/canvg/1.5/canvg.min.js" integrity="sha512-Wucjpk84udKVXsFLI8U+zeBZVmq/ufmoDwmF3ywTr+uJ1RnYj9sIGOU171+GFnMc1TI8WgjsJciM/vHJ7K1DRA==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.2.0/jspdf.umd.min.js" integrity="sha512-YnVU8b8PyEw7oHtil6p9au8k/Co0chizlPltAwx25CMWX6syRiy24HduUeWi/WpBbJh4Y4562du0CHAlvnUeeQ==" crossorigin="anonymous"></script-->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.1/jspdf.umd.min.js"></script>
+
+
+<script type="module" src="{% static 'Blankdb/javascript/summaryReport.js' %}"></script>
+
+
+{% endblock %}
+
+
+{% block body_local %}
+{% load common %}
+
+<div class="m-2">
+
+	<h2 class="speHeading"> Download a summary report <button type="button" class="btn" data-toggle="modal" data-target="#exampleModal" data-whatever="@downloadReport" onclick="theHelpFns(this);"><span class='fas fa-info-circle'> </span></button></h2>
+	<br> 
+	<h4 class='speHeading'>Instructions</h4>
+	<ol>
+		<li>Choose a country. If logged in, can alternatively choose a project.</li>
+		<li>Choose a starting and an ending year.</li>
+		<li>Download the report (scroll all the way to the end to find the download button).</li>
+	</ol>
+
+
+
+	<br>
+	
+
+	<table class="table-sm table-bordered">
+		<tr >
+			<td> <b>Country</b> </td>
+			<td> {{ form.country }} </td>
+		</tr>
+		{% if user.is_authenticated %}
+		<tr>
+			<td> <b> Project </b></td>
+			<td> {{ form.project }} </td>
+		</tr>
+		{% endif %}
+	</table>
+	<br>
+	<table class="table-sm table-bordered">
+		<tr> 
+			<td><b>Year start</b></td>
+			<td><b>Year end</b></td> 
+		</tr>
+		<tr>
+			<td>
+				{{ form.year_start }}
+			</td>
+			<td>
+				{{ form.year_end }}
+			</td>
+		</tr>
+	</table> 
+	<br>
+
+	<span id="noteToShow_inside" class='error'> </span>
+
+	<br>
+	{% if user.is_authenticated %}
+		<small>
+			Note: if both project and country are selected, results with the conjection of the two will be returned.
+		</small>
+	{% endif %}
+	<br>
+
+	<button class="btn btn-sm btn-default-spe" onclick="javascript:Blankdb_checkAndGetData('{% url 'Blankdb:reportData' %}');"> Generate report </button>
+
+	<br>
+	<br>
+	<span id="noteToShow_outside" class='error'> </span>
+
+</div>
+<br>
+<br>
+
+<div id="div_report" class="repBg" style="visibility: hidden">
+	<center>
+		<h1 id="reportHeading" class="repHeading"> MGT analysis of {{orgName|safe}} </h1>
+		<p id="genTimeStamp"> </p>
+	</center>
+	<br>
+ 	<span id = "noteToShow"> </span>
+
+	<ul>
+	{% for mgtLvl in numMgtLvls %}
+		<li> <a id="mgtLvl_idx_{{mgtLvl}}" href="#mgtLvl_h2_{{mgtLvl}}"> </a> </li>
+	{% endfor %}
+	</ul>
+	<br>
+
+
+
+	<div id="div_chart1" height="600" width="800">
+		<svg id="chart1_svg" height="370" width="800" class='aSvg'></svg>
+		<br>
+		<p id="chart1_p"> </p>
+	</div>
+	<br>
+	<br>
+
+
+	<div id="div_chart2" height="600" width="800">
+		<svg id="chart2_svg" height="400" width="800" class='aSvg'></svg> <br>
+		<p id="chart2_p"> </p>
+	</div>
+	<br>
+	<br>
+
+
+	<div id="div_chart3">
+		<table id="chart3_table" class="table table-sm table-bordered">
+		</table>
+		<p id="chart3_p"> </p>
+	</div>
+	<br>
+	<br>
+
+	<div id="div_chart4">
+		<svg id="chart4_svg" height="450" width="800" class='aSvg'></svg><br>
+		<p id="chart4_p"> </p>
+	</div>
+	<br>
+	<br>
+
+
+	<div id="chart_mgtLvls">
+		{% for mgtLvl in numMgtLvls %}
+			<h2 id="mgtLvl_h2_{{mgtLvl}}" class="repHeading"> &nbsp; <a href="#reportHeading" id="linkToTop"> (Back to top) </a> </h2>
+			<br>
+
+			<div id="div_chart_mgtLvl{{mgtLvl}}_0">
+				<table id="chart_mgtLvl{{mgtLvl}}_0_table" class="table table-sm table-bordered">
+				</table>
+				<p id="chart_mgtLvl{{mgtLvl}}_0_p"> </p>
+			</div>
+			<br>
+			<br>
+
+			<!-- div id="divchart_mgtLvl{{mgtLvl}}_1">
+				<svg id="chart_mgtLvl{{mgtLvl}}_1_svg" height="370" width="800" class='aSvg'>
+				</svg><br>
+				<p id="chart_mgtLvl{{mgtLvl}}_1_p"> </p>
+			</div>
+			<br>
+			<br -->
+
+			<div id="divchart_mgtLvl{{mgtLvl}}_1_v2">
+				<svg id="chart_mgtLvl{{mgtLvl}}_1_v2_svg" height="400" width="800" class='aSvg'>
+				</svg><br>
+				<p id="chart_mgtLvl{{mgtLvl}}_1_v2_p"> </p>
+			</div>
+			<br>
+			<br>
+
+
+			<!-- div id="div_chart_mgtLvl{{mgtLvl}}_2">
+				<svg id="chart_mgtLvl{{mgtLvl}}_2_svg" height="370" width="800" class='aSvg'>
+				</svg><br>
+				<p id="chart_mgtLvl{{mgtLvl}}_2_p"> </p>
+			</div>
+			<br>
+			<br -->
+
+			<div id="div_chart_mgtLvl{{mgtLvl}}_2_v2">
+				<svg id="chart_mgtLvl{{mgtLvl}}_2_v2_svg" height="400" width="800" class='aSvg'>
+				</svg><br>
+				<p id="chart_mgtLvl{{mgtLvl}}_2_v2_p"> </p>
+			</div>
+			<br>
+			<br>
+
+
+			<div id="div_chart_mgtLvl{{mgtLvl}}_3">
+				<svg id="chart_mgtLvl{{mgtLvl}}_3_svg" height="400" width="1300" class='aSvg'>
+				</svg><br>
+				<p id="chart_mgtLvl{{mgtLvl}}_3_p"> </p>
+			</div>
+			<br>
+			<br>
+
+
+			<div id="div_chart_mgtLvl{{mgtLvl}}_4">
+				<svg id="chart_mgtLvl{{mgtLvl}}_4prev_svg" height="460" width="400" class='aSvg'>
+				</svg>
+				<svg id="chart_mgtLvl{{mgtLvl}}_4next_svg" height="460" width="400" class='aSvg'>
+				</svg><br>
+				<p id="chart_mgtLvl{{mgtLvl}}_4_p"> </p>
+			</div>
+			<br>
+			<br>
+
+
+			<div id="div_chart_mgtLvl{{mgtLvl}}_5">
+				<svg id="chart_mgtLvl{{mgtLvl}}_5_svg" height="400" width="800" class='aSvg'>
+				</svg><br>
+				<p id="chart_mgtLvl{{mgtLvl}}_5_p"> </p>
+			</div>
+			<br>
+			<br>
+		{% endfor %}
+
+
+		<style>
+			.repBg{
+				background-color: #edebd9;
+			}
+			.repHeading{
+				color: #613597;
+				display: inline-block;
+			}
+
+			.aSvg {
+				border:1px solid #E8E8E8;
+			}
+
+			th, td {
+				padding: 5px;
+				text-align: left;
+				border: 1px solid #E8E8E8;
+				border-collapse: collapse;
+			}
+
+			td {
+				font-size: 80%;
+			}
+
+			th {
+			    font-weight: normal;
+				font-style: italic;
+			}
+
+			#linkToTop {
+				font-size: 40%;
+				font-weight: normal;
+			}
+
+		</style>
+
+	</div>
+
+</div>
+
+<br>
+
+<div id="svgdataurl">
+</div>
+
+<button id="btn_doTheDownload" class="btn btn-sm btn-default-spe" onclick="javascript:Blankdb_downloadRep();" disabled="true" autocomplete="off"> Download report as html document </button><button type="button" class="btn" data-toggle="modal" data-target="#exampleModal" data-whatever="@downloadRepHtml"  onclick="theHelpFns(this);"><span class='fas fa-info-circle'> </span></button>
+<br>
+<br>
+
+{% include 'Blankdb/modal.html' %}
+{% endblock %}
