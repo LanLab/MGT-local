@@ -1,0 +1,28 @@
+name: mgtenv_test
+channels:
+  - conda-forge
+  - bioconda
+  - anaconda
+  - defaults
+dependencies:
+  - python=3.10
+  - shovill
+  - assembly-stats
+  - mlst
+  - kraken=1
+  - biopython
+  - mafft
+  - psycopg2
+  - dateparser
+  - django=3
+  - requests
+  - kma
+  - pyparsing
+  - pip
+  - pip:
+    - sistr_cmd
+    - django-countries
+    - django-registration
+    - django-tables2
+    - djangorestframework
+    - pycountry-convert

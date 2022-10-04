@@ -164,6 +164,7 @@ TESTDB="True"
 KATANA_SETTINGS=''
 ##############################
 
+#CHANGE BELOW TO list species specific cutoffs/values
 SPECIES_SEROVAR = {'Blankdb': {"species":'Blank species',
                                   "serovar":'',
                                   "min_largest_contig":60000,
@@ -176,7 +177,8 @@ SPECIES_SEROVAR = {'Blankdb': {"species":'Blank species',
                                   "snpwindow":40,
                                   "densitylim":4,
                                   "refsize":5.0,
-                                  "blastident":90
+                                  "blastident":90,
+                                  "apzero":0.04
                                   }
                    }
 

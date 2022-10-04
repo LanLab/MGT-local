@@ -1063,12 +1063,13 @@ def runAllele2Db(args,conn,alleleslocation):
         for f in alleles:
             ident = all2id[f]
             fullpath = uploadlocation + f
-            command += """python {scriptpath} {allelesfile} {appname} -s {settings} -c -t none --project {mgtproj} --timing --id {ident}{nested}{query}{loc}\n""".format(allelesfile=fullpath,
+            command += """python {scriptpath} {allelesfile} {appname} -s {settings} --apzerolim {apzero} -c -t none --project {mgtproj} --timing --id {ident}{nested}{query}{loc}\n""".format(allelesfile=fullpath,
                                                                                                                                                         scriptpath=al2dbpath,
                                                                                                                                                         appname=args.appname,
                                                                                                                                                         tmp=args.tmpfolder,
                                                                                                                                                         mgtproj=args.dbproject,
                                                                                                                                                         settings=args.settings,
+                                                                                                                                                        apzero=args.apzero,
                                                                                                                                                         ident=ident,
                                                                                                                                                         nested=nestedcall,
                                                                                                                                                         query=q,
@@ -1108,13 +1109,14 @@ cd {tmp}
     
 source /srv/scratch/lanlab/michael/miniconda_newkatana/bin/activate mgtdbpaper
     
-for allelesfile in {allelesfolder}/*.fasta; do python {scriptpath} $allelesfile {appname} -s {settings} -c -t none --project {mgtproj} --timing{subset}{nested}; done""".format(allelesfolder=alleles_tmp,
+for allelesfile in {allelesfolder}/*.fasta; do python {scriptpath} $allelesfile {appname} -s {settings} --apzerolim {apzero} -c -t none --project {mgtproj} --timing{subset}{nested}; done""".format(allelesfolder=alleles_tmp,
                                                                                                                                                                             scriptpath=al2dbpath,
                                                                                                                                                                             appname=args.appname,
                                                                                                                                                                             tmp=args.tmpfolder,
                                                                                                                                                                             mgtproj=args.dbproject,
                                                                                                                                                                             app=str(args.appname)[:3],
                                                                                                                                                                             settings=args.settings,
+                                                                                                                                                                            apzero=args.apzero,
                                                                                                                                                                             test=args.testdb,
                                                                                                                                                                             subset=subset,
                                                                                                                                                                             nested=nestedcall)
@@ -1301,6 +1303,7 @@ def main():
     args.densitylim = settings.SPECIES_SEROVAR[args.appname]["densitylim"]
     args.refsize = settings.SPECIES_SEROVAR[args.appname]["refsize"]
     args.blastident = settings.SPECIES_SEROVAR[args.appname]["blastident"]
+    args.apzero = settings.SPECIES_SEROVAR[args.appname]["apzero"]
 
 
 
