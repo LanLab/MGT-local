@@ -36,7 +36,7 @@ path_mgt="/path/to/MGT/"
 settings_prefix="Mgt.settings_local_mp"
 
 #CHANGE location to store single file of reference alleles
-refallalleles="/Users/z3521839/Library/CloudStorage/OneDrive-UNSW/MGT/genome_query_testing/species_specific_alleles/"
+refallalleles="/path/to/species_specific_alleles/"
 
 #CHANGE name of conda environment
 condaenv="mgtenv"
