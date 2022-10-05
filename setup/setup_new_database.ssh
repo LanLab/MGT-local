@@ -125,7 +125,7 @@ sleep 4
 sed -i -e 's/#replace //g' ../$appname""/models/projModels.py
 cd ../
 python manage.py makemigrations --settings $settings_prefix $appname
-read  -p "Press enter after fixing ap_N migration order problem" mainmenuinput
+#read  -p "Press enter after fixing ap_N migration order problem" mainmenuinput
 python manage.py migrate --settings $settings_prefix --database=$db_name
 sleep 1
 cd $mgt_home"Scripts"

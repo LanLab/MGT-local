@@ -19,6 +19,7 @@ dependencies:
   - kma
   - pyparsing
   - pip
+  - geopy
   - pip:
     - sistr_cmd
     - django-countries
