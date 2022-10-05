@@ -1,4 +1,4 @@
-name: mgtenv_test
+name: mgtenv
 channels:
   - conda-forge
   - bioconda
@@ -10,12 +10,12 @@ dependencies:
   - assembly-stats
   - mlst
   - kraken=1
-  - biopython
+  - biopython=1.78
   - mafft
-  - psycopg2
-  - dateparser
-  - django=3
-  - requests
+  - psycopg2=2.8
+  - dateparser=1.1.1
+  - django=3.2
+  - requests=2.27
   - kma
   - pyparsing
   - pip

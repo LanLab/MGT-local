@@ -21,8 +21,13 @@ examples are in the setup/example_inputs folder
 
 ## 2. install dependencies
 1. install [postgres](https://www.postgresql.org/download/)
-2. [miniconda](https://docs.conda.io/en/latest/miniconda.html)/[mamba](https://mamba.readthedocs.io/en/latest/installation.html) for environment management
-3. create an environment within conda/mamba using the included yaml file (/setup/mgt_conda_env.yaml)
+2. [miniconda](https://docs.conda.io/en/latest/miniconda.html) or [mamba](https://mamba.readthedocs.io/en/latest/installation.html)(reccommended) for environment management
+3. create an environment within conda/mamba using the included yaml file (/setup/mgt_conda_env.yaml). Default name is mgtenv.
+    ````
+    conda env create --file=/path/to/MGT-local/setup/mgt_conda_env.yaml
+    or
+    mamba env create --file=/path/to/MGT-local/setup/mgt_conda_env.yaml
+    ````
 
 ## 3. modify settings and urls files
 In the /Mgt/Mgt/Mgt folder make a copy of the settings and urls files and rename any lines with #CHANGE comments as per comment instructions
