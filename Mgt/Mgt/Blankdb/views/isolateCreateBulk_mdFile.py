@@ -14,8 +14,9 @@ from datetime import datetime
 from django.core.exceptions import PermissionDenied
 from Blankdb.models.isoMetaModels import continent_choices
 from django_countries import countries
-import pyparsing as pp
-
+from Blankdb.models import Isolation, Location
+# import pyparsing_unicode as pp
+import regex
 
 def page(request):
 	project = None # for sending back on initial page load.
@@ -211,12 +212,12 @@ def checkProvidedTypes(form_md, arrLine, dict_colNums):
 
 	if not (arrLine[dict_colNums['continent']] in dict(continent_choices)):
 		# print (arrLine[dict_colNums['continent']].lower() + " is the provided continent")
-		form_md.add_error(None, "Continent: A provided continent is not allowed. Please see the instructions for allowable values.")
+		form_md.add_error(None, "Continent: A provided continent \"" +  arrLine[dict_colNums['continent']] + "\" is not allowed. Please see the instructions for allowable values.")
 		return
 
 	if (not (arrLine[dict_colNums['country']] in dict(countries).values())):
 
-		form_md.add_error(None, "Country: A provided country value is not allowed. Please see the instructions for allowable values.")
+		form_md.add_error(None, "Country: A provided country value \"" + arrLine[dict_colNums['country']] + "\" is not allowed. Please see the instructions for allowable values.")
 		return
 
 
@@ -240,6 +241,7 @@ def addIsolateAndMd(form_md, arr, dict_colNums, projectId):
 	# Form location
 	form_loc = getAndAddLocInfo(arr[dict_colNums['continent']],  arr[dict_colNums['country']], arr[dict_colNums['state']], arr[dict_colNums['postcode']])
 
+	locObj = None
 	if not form_loc.is_valid():
 
 		theErrors =  json.loads(form_loc.errors.as_json())
@@ -247,7 +249,12 @@ def addIsolateAndMd(form_md, arr, dict_colNums, projectId):
 
 		for error in theErrors:
 			if error == "__all__": # ignoring the combination already exists constraint.
-				continue
+
+				if len(theErrors[error]) == 1 and 'unique_together' in theErrors[error][0]['code']:
+					# get this islnObj from db!
+					locObj = Location.objects.get(continent=arr[dict_colNums['continent']], country=arr[dict_colNums['country']], state=arr[dict_colNums['state']], postcode=arr[dict_colNums['postcode']])
+					print (locObj)
+					continue
 
 			isAnyError = True
 
@@ -259,36 +266,47 @@ def addIsolateAndMd(form_md, arr, dict_colNums, projectId):
 
 			return None
 
-	# if exists, get the object, else save!
-	locObj = form_loc.save()
+	else:
+		# if exists, get the object, else save!
+		locObj = form_loc.save()
 
 	# Form isolation
 	form_isln = getAndAddIslnInfo(form_md, arr[dict_colNums['source']], arr[dict_colNums['type']], arr[dict_colNums['host']], arr[dict_colNums['disease']], arr[dict_colNums['date']],  arr[dict_colNums['year']], arr[dict_colNums['month']])
 
+
+	islnObj = None
 	if not form_isln.is_valid():
-		print(form_isln.errors.as_json())
+		# print(form_isln.errors.as_json())
 
 		theErrors =  json.loads(form_isln.errors.as_json())
 		isAnyError = False
 
 		for error in theErrors:
 			errorName = error
+
 			if error == "__all__":
-				errorName = ""
+
+				if len(theErrors[error]) == 1 and 'unique_together' in theErrors[error][0]['code']:
+					# get this islnObj from db!
+					islnObj = Isolation.objects.get(source=arr[dict_colNums['source']], type=arr[dict_colNums['type']], host=arr[dict_colNums['host']], disease=arr[dict_colNums['disease']], date=arr[dict_colNums['date']], year=arr[dict_colNums['year']], month=arr[dict_colNums['month']])
+
+					continue
+
+				errorName = "Isolation"
 			 	# continue
 
 			isAnyError = True
 
-			form_md.add_error(None, errorName + " - " + theErrors[error][0]['message'])
+			form_md.add_error(None, errorName + " - " + theErrors[error][0]['code'] + ': ' + theErrors[error][0]['message'])
+
 
 
 		if isAnyError:
 			form_md.add_error(None, "Found isolate isolation errors.")
-
 			return None
 
-	islnObj = form_isln.save()
-
+	else:
+		islnObj = form_isln.save()
 
 	# form isolate
 	dict_iso = dict()
@@ -298,9 +316,12 @@ def addIsolateAndMd(form_md, arr, dict_colNums, projectId):
 	dict_iso['tmpFn_alleles'] = arr[dict_colNums['tmpFn_alleles']]
 	dict_iso['server_status'] = 'A'
 
+
+
 	form_iso = isolateForms.IsolateForm_tmp(dict_iso)
 
-	if  not form_iso.is_valid():
+
+	if not form_iso.is_valid():
 		isError = False
 		theErrors =  json.loads(form_iso.errors.as_json())
 
@@ -311,7 +332,7 @@ def addIsolateAndMd(form_md, arr, dict_colNums, projectId):
 
 
 		form_md.add_error(None, "Error detected in isolate.")
-
+		return None
 
 	isolateObj = form_iso.save(commit=False)
 
@@ -339,24 +360,34 @@ def errorsToIgnore(msg):
 def handle_metadata_file(form_md, file_csv, projectId):
 	dict_notAddedIsolates = dict()
 
-	file_data = file_csv.read().decode('utf-8')
+	#import csv
+	#file_data =  csv.reader(file_csv)
 
+	file_data = file_csv.read().decode('Windows-1252')
+	# print (file_data)
 	lines = re.split('[\n\r]+', file_data)
-
+	# print (lines)
 
 	isHeader = True
 	for line in lines:
 
 		# line = re.sub('[\n\r]+$', '', line)
 
-		if re.match("^[\s\t]*$", line):
+		if re.match(r"^[\s\t]*$", line):
 			continue
 
+		if re.search(r'[\"\']+', line):
+			rx = regex.compile(r'"[^"]*"(*SKIP)(*FAIL)|,\s*')
+			arr = rx.split(line)
+			# print ('Split 1')
+		else:
+			arr = line.split(',')
+			# print ('Split 2')
+		# arr = pp.commaSeparatedList.parseString(line).asList()
 
-		arr = pp.commaSeparatedList.parseString(line).asList()
-
+		# print ('The arr is: ' + str(arr))
 		for i in range(0, len(arr)):
-			arr[i] = re.sub("\"", "", arr[i])
+			arr[i] = re.sub("[\"\']+", "", arr[i])
 
 
 		if isHeader == True:
@@ -395,7 +426,7 @@ def extractHeader(form_md, arrLine):
 	if len(arrLine) < len(dict_colNums):
 		form_md.add_error(None, "Error: uploaded metadata file has too few columns");
 
-	print(arrLine)
+	# print(arrLine)
 	for i in range(0,len(arrLine)):
 		if 'isolate identifier' == arrLine[i].lower():
 			dict_colNums['identifier'] = i
@@ -441,7 +472,7 @@ def extractHeader(form_md, arrLine):
 
 
 	if any(value == -1 for value in dict_colNums.values()):
-		print(dict_colNums)
+		# print(dict_colNums)
 		form_md.add_error(None, "The uploaded meta data does not contain the expected columns. Please download the template file again from Step 1. and readd your data to it.")
 
 

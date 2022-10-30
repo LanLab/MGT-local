@@ -19,8 +19,8 @@ import importlib.util
 from bioentrezMetadataGet import metadl_main
 
 from addIsolates import addInfo
-from bpAntigens_cron import bp_antigen_calling
-from bp_eryth_res import bp_eryth_res
+# from bpAntigens_cron import bp_antigen_calling
+# from bp_eryth_res import bp_eryth_res
 
 
 
@@ -1152,19 +1152,19 @@ for allelesfile in {allelesfolder}/*.fasta; do python {scriptpath} $allelesfile 
 
         print("finished processing")
 
-def runSpeciesSpecific(args,conn,settings):
-    if args.appname == "Pertussis":
-        """
-        run antigen typing 
-        if reads: run 23S typing
-        """
-        numrun = bp_antigen_calling(args,conn)
-        print(f'antigen alleles called for {numrun} isolates')
-        success,failed =bp_eryth_res(args,conn,settings)
-        if len(failed) > 0:
-            print(f'{",".join(failed)} isolates kma run failed')
-        print(f'23s mutation (erythromycin res) called for {len(success)} isolates')
-        print("Finished species specific analysis: {}".format(args.appname, datetime.datetime.now()))
+# def runSpeciesSpecific(args,conn,settings):
+#     if args.appname == "Pertussis":
+#         """
+#         run antigen typing
+#         if reads: run 23S typing
+#         """
+#         numrun = bp_antigen_calling(args,conn)
+#         print(f'antigen alleles called for {numrun} isolates')
+#         success,failed =bp_eryth_res(args,conn,settings)
+#         if len(failed) > 0:
+#             print(f'{",".join(failed)} isolates kma run failed')
+#         print(f'23s mutation (erythromycin res) called for {len(success)} isolates')
+#         print("Finished species specific analysis: {}".format(args.appname, datetime.datetime.now()))
 
 
 
@@ -1342,7 +1342,7 @@ def main():
         if args.local:
             sys.exit("--species_specific only on mgtdb central server as it is specific to species located there")
         print("running {} specific analyses at: {}".format(args.appname,datetime.datetime.now()))
-        runSpeciesSpecific(args,conn,settings)
+        # runSpeciesSpecific(args,conn,settings)
 
     cleanup(args)
 

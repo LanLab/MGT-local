@@ -60,6 +60,6 @@ def page(request, pk):
 
 	print(isolates)
 
-	(list_serverStatus, list_assignStatus, list_privStatus) = routeToRightFn.isolateChoices()
+	(list_serverStatus, list_assignStatus, list_privStatus, boolChoices) = routeToRightFn.isolateChoices()
 
-	return render(request, 'Blankdb/isolateCreateBulk_alFiles.html', {"project": proj, "isolates": isolates, "IsoColNames": IsolColNames, "serverStatus": list_serverStatus, "assignStatus": list_assignStatus, "privStatus": list_privStatus})
+	return render(request, 'Blankdb/isolateCreateBulk_alFiles.html', {"project": proj, "isolates": isolates, "IsoColNames": IsolColNames, "serverStatus": list_serverStatus, "assignStatus": list_assignStatus, "privStatus": list_privStatus, "boolChoices": boolChoices})

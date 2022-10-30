@@ -54,10 +54,10 @@ superuseremail="ref@ref.ref"
 ################################# EDIT ABOVE THIS LINE ONLY  ###############################################################
 
 echo "creating database"
-dropdb -U postgres ${db_name}
-createdb -U postgres ${db_name}
-psql -U postgres -d ${db_name} -c "grant all privileges on database ${db_name} to mlstwebsite"
-psql -U postgres -d ${db_name} -c "grant all privileges on database ${db_name} to postgres"
+dropdb -U ${dbuser} ${db_name}
+createdb -U ${dbuser} ${db_name}
+psql -U ${dbuser} -d ${db_name} -c "grant all privileges on database ${db_name} to mlstwebsite"
+psql -U ${dbuser} -d ${db_name} -c "grant all privileges on database ${db_name} to ${dbuser}"
 sleep 2
 
 cd ${path_mgt}
@@ -148,6 +148,8 @@ cd $mgt_home"Scripts";
 python addClonalComplexes.py ../ Mgt $appname  $ref_files"ccInfo.txt"  $ref_files"ClonalComplexes/" $settings_prefix
 sleep 2;
 
+
+#currently only Ref works FIX!!!!
 echo "add ref user"
 cd ..
 python manage.py createsuperuser --settings $settings_prefix --username $superusername --email $superuseremail

@@ -59,7 +59,7 @@ class Isolation(models.Model):
 	month = models.IntegerField(choices=month_choices(), blank=True, null=True, verbose_name="Collection month")
 
 	class Meta:
-		unique_together = (("source", "type", "host", "disease", "date"),)
+		unique_together = (("source", "type", "host", "disease", "date", "month", "year"),)
 
 
 

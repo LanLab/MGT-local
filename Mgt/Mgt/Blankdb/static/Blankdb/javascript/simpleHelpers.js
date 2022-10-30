@@ -27,7 +27,7 @@ function isOkNum(val){
 
 function isOkValBasicCheck(val){
 
-	if (val && val.match(/^[a-zA-Z0-9\.\s\-]+$/)){
+	if (val && val.match(/^[a-zA-Z0-9\.\s\-À-ÖØ-öø-ÿ]+$/)){
 		return true;
 	}
 

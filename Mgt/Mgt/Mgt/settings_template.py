@@ -84,7 +84,7 @@ FILE_UPLOAD_DIRECTORY_PERMISSIONS=0o774
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
 # 2018, Jan 9 - require a db router (if multiple databases)
-NCBI_RETRIEVAL_FREQUENCY = {'Blankdb': None}
+NCBI_RETRIEVAL_FREQUENCY = {'Blankdb': None} # CHANGE
 
 DATABASE_ROUTERS = ['Mgt.router.GenericRouter']
 APPS_DATABASE_MAPPING = {'Blankdb': 'blankdb'} #CHANGE change to appname in INSTALLED_APPS and database DATABASES in name normally upper and lowercase first letter i.e. Salmonella and salmonella

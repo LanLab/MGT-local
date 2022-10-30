@@ -48,5 +48,5 @@ Typing of isolates is in three stages:
    
    cd /path/to/MGT-local/Mgt/Mgt/Scripts
    
-   python cron_pipeline.py -s /path/to/settings_file.py -d Blankdb --allele_to_db
+   python cron_pipeline.py -s /path/to/settings_file.py -d Blankdb --allele_to_db --local
    ````
