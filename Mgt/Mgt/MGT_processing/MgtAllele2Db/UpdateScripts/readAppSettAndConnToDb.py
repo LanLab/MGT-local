@@ -6,18 +6,15 @@ import importlib
 # from Static import *
 
 def setupEnvPath(projectPath, projectName,settingpath):
-	sys.path.append(projectPath)
-	os.environ['DJANGO_SETTINGS_MODULE'] = settingpath
+	if ".py" not in settingpath:
+		sys.path.append(projectPath)
+		os.environ['DJANGO_SETTINGS_MODULE'] = projectName + '.settings_' + settingpath
+	else:
+		dir = os.path.dirname(settingpath)
+		base = os.path.basename(settingpath).replace(".py","")
+		sys.path.append(dir)
+		os.environ['DJANGO_SETTINGS_MODULE'] =  projectName + "." + base.replace(".py","")
 	django.setup()
-	# if ".py" not in settingpath:
-	# 	sys.path.append(projectPath)
-	# 	os.environ['DJANGO_SETTINGS_MODULE'] = projectName + '.settings_' + settingpath
-	# else:
-	# 	dir = os.path.dirname(settingpath)
-	# 	base = os.path.basename(settingpath).replace(".py","")
-	# 	sys.path.append(dir)
-	# 	os.environ['DJANGO_SETTINGS_MODULE'] = base.replace(".py","")
-	# django.setup()
 
 
 def importAppClassModels(appName):
