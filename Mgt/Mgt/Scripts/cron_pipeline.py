@@ -1049,13 +1049,17 @@ def runAllele2Db(args,conn,alleleslocation):
 
 
     if args.local:
+        conda_activate = os.path.join(os.path.dirname(os.path.dirname(shutil.which('conda'))), 'etc', 'profile.d',
+                                      'conda.sh')
         folder = path.dirname(path.dirname(path.abspath(__file__)))
         al2dbpath = folder + "/MGT_processing/MgtAllele2Db/Allele_to_mgt_db.py"
         command = "cd {tmp}\n".format(tmp=args.tmpfolder)
-        command += "source ~/.bash_profile\n"
-        command += "source ~/.bashrc\n"
-        command += "source ~/.zshrc\n"
-        command += "conda activate {conda_env}\n".format(conda_env = args.condaenv)
+        command = '/bin/bash -c "cd {tmp};'.format(tmp=args.tmpfolder)
+        command += 'source {}'.format(conda_activate)
+        # command += "source ~/.bash_profile\n"
+        # command += "source ~/.bashrc\n"
+        # command += "source ~/.zshrc\n"
+        command += "conda activate {conda_env}\n".format(conda_env=args.condaenv)
         for f in alleles:
             ident = all2id[f]
             fullpath = uploadlocation + f
@@ -1068,14 +1072,15 @@ def runAllele2Db(args,conn,alleleslocation):
                                                                                                                                                         apzero=args.apzero,
                                                                                                                                                         ident=ident,
                                                                                                                                                         nested=nestedcall,
-                                                                                                                                                        query=q,
-                                                                                                                                                        loc=loc)
+                                                                                                                                                        query=q)
+        command += '"'
 
-        with subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as sp:
-            for line in sp.stdout:
-                sys.stdout.write(line.decode())
-            for line in sp.stderr:
-                sys.stderr.write(line.decode())
+        subprocess.run(command, shell=True)
+        # with subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as sp:
+        #     for line in sp.stdout:
+        #         sys.stdout.write(line.decode())
+        #     for line in sp.stderr:
+        #         sys.stderr.write(line.decode())
 
 
 
