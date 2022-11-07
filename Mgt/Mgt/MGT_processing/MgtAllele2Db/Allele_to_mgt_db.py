@@ -7,6 +7,8 @@ from os import path
 import argparse
 import math
 import importlib.util
+import re
+from operator import itemgetter
 
 sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
 # print(path.dirname(path.dirname(path.dirname(path.dirname(path.abspath(__file__))))))
@@ -213,7 +215,7 @@ def get_allele_profile(connection, lev, NewPosAlleles, NewNegAlleles, Allloc, Po
         #  where the allele is negative
         #  OTHERWISE if no match assign new (st or dst)
         profile, new_allele_outdict = match_or_assign_alleles(alleles, lev, NewPosAlleles, NewNegAlleles,
-                                                              all_alleles_lists, profile, loci_list, connection, args)
+                                                              all_alleles_lists,all_pos_alleles_lists, profile, loci_list, connection, args)
 
         if args.timing:
             print("{} match and assign alleles".format(lev), (" --- %s seconds ---" % (time.time() - start_time)))
@@ -280,11 +282,11 @@ def retrieve_alleles_to_compare(connection, lev, Allloc, loci_list, to_process, 
 
     # print(all_pos_alleles_lists)
 
-    if not all_alleles_lists or all_pos_alleles_lists == []:
-        subset = False
-
-    if not args.subsetwcc:
-        subset = False
+    # if not all_alleles_lists or all_pos_alleles_lists == []:
+    #     subset = False
+    #
+    # if not args.subsetwcc:
+    #     subset = False
 
     #  Below sql query retrieves allele fasta file locations for loci in "to process" list
 
@@ -315,13 +317,13 @@ def retrieve_alleles_to_compare(connection, lev, Allloc, loci_list, to_process, 
         if subset:
             for allele in alleles:
                 allelenumber = allele.id.split(":")[-1]
-                if "-" in allelenumber:
-                    pos = allelenumber.split("_")[0][1:]
-                else:
-                    pos = str(allelenumber)
-
-                if pos in all_pos_alleles_lists[locus] or allelenumber == "1":
-                    allelesseqs[locus][allelenumber] = str(allele.seq)
+                # if "-" in allelenumber:
+                #     pos = allelenumber.split("_")[0][1:]
+                # else:
+                #     pos = str(allelenumber)
+                # # print(pos)
+                # if pos in all_pos_alleles_lists[locus] or allelenumber == "1":
+                #     allelesseqs[locus][allelenumber] = str(allele.seq)
         else:
             for allele in alleles:
                 allelenumber = allele.id.split(":")[-1]
@@ -333,6 +335,7 @@ def retrieve_alleles_to_compare(connection, lev, Allloc, loci_list, to_process, 
 def get_locus_allele_freqs_in_higher_cc(lev, ccb1, ccb2, to_process, locuslist, table_nos, connection, args,
                                         nodash_to_dash, ccsubsetlevs=()):
     """
+    THIS FUNCTION MOSTLY NOT NEEDED BUT KEPT IN CASE SUBSETTING IS EVER NEEDED IN FUTURE
     given a locus and higher CCs (-1 and -2 from current)
     get the list of positive alleles already called in the 0 level
     :param lev: current level
@@ -351,7 +354,7 @@ def get_locus_allele_freqs_in_higher_cc(lev, ccb1, ccb2, to_process, locuslist, 
     if ccsubsetlevs == ():
         outp = ""
         if args.timing:
-            print("No {} cc subsetting".format(lev), (" --- %s seconds ---" % (time.time() - start_time1)))
+            print("\tNo {} cc subsetting".format(lev), (" --- %s seconds ---" % (time.time() - start_time1)))
     elif args.subsetwccs:
         prevlevst = ccb1[0]
         prevlevdst = ccb1[1]
@@ -374,7 +377,7 @@ def get_locus_allele_freqs_in_higher_cc(lev, ccb1, ccb2, to_process, locuslist, 
                                                                                       lev - ccb2lev, cclisb2)
 
         if args.timing:
-            print("{} cc subsetting".format(lev), (" --- %s seconds ---" % (time.time() - start_time1)))
+            print("\t{} cc subsetting".format(lev), (" --- %s seconds ---" % (time.time() - start_time1)))
     combined_res = {}
     combined_locils = []
     stidlis = []
@@ -407,8 +410,8 @@ def get_locus_allele_freqs_in_higher_cc(lev, ccb1, ccb2, to_process, locuslist, 
         (sorry^)
         """
 
-        sqlcomm = """SELECT {0} FROM "{1}_ap{2}_{3}" JOIN "{1}_view_apcc" ON "{1}_view_apcc".ap{2}_0 = "{1}_ap{2}_{3}".{4}{5};""".format(
-            locuslist_string, args.appname, lev, num, ident, outp)
+        sqlcomm = """SELECT {0} FROM "{1}_ap{2}_{3}";""".format(
+            locuslist_string, args.appname, lev, num)
 
         cur.execute(sqlcomm)
 
@@ -426,27 +429,13 @@ def get_locus_allele_freqs_in_higher_cc(lev, ccb1, ccb2, to_process, locuslist, 
         cur.close()
 
     if args.timing:
-        print("{} retrieve sts/alleles".format(lev), (" --- %s seconds ---" % (time.time() - start_time1)))
+        print("\t{} retrieve sts/alleles".format(lev), (" --- %s seconds ---" % (time.time() - start_time1)))
     all_alleles = {x: [] for x in locuslist}
     pos_alleles = {x: [] for x in locuslist}
 
-
-    if len(stidlis) == 0:
-
-        sqlcomm = """SELECT "ap{lev}_0" FROM "{app}_view_apcc"{outp};""".format(app=args.appname, lev=lev, outp=outp)
-
-        cur = connection.cursor()
-        cur.execute(sqlcomm)
-
-        res = cur.fetchall()
-        for result in res:
-            id = result[0]
-            stidlis.append(id)
-        cur.close()
-
     matching_st_ids = []
 
-    matching_st_ids = [x for x in stidlis if x]
+
 
     for id in combined_res:
         # matching_st_ids.append(id)
@@ -462,12 +451,12 @@ def get_locus_allele_freqs_in_higher_cc(lev, ccb1, ccb2, to_process, locuslist, 
     # print("Level and matching sts",lev,len(matching_st_ids))
 
     if args.timing:
-        print("{} higher cc retrieve done".format(lev), (" --- %s seconds ---" % (time.time() - start_time1)))
+        print("\t{} higher cc retrieve done".format(lev), (" --- %s seconds ---" % (time.time() - start_time1)))
 
     return all_alleles, pos_alleles, matching_st_ids
 
 
-def match_or_assign_alleles(alleles, lev, NewPosAlleles, NewNegAlleles, all_alleles_lists, assignments,
+def match_or_assign_alleles(alleles, lev, NewPosAlleles, NewNegAlleles, all_alleles_lists,all_pos_alleles_lists, assignments,
                             loci_list, connection, args):
     """
     match any unmatched alleles to current db
@@ -487,9 +476,12 @@ def match_or_assign_alleles(alleles, lev, NewPosAlleles, NewNegAlleles, all_alle
     :return: assignments of alleles from input + details about any new alleles including SNPs etc
     """
     # Add exact matches to pos alleles to assignments and record novel positive alleles that need naming in newpos_todo
-
+    time1 = time.time()
     assignments, newpos_todo = exactmatch(alleles, NewPosAlleles, assignments, loci_list)
 
+    if args.timing:
+        print("\tassign_alleles_exact".format(lev), (" --- %s seconds ---" % (time.time() - time1)))
+    time1 = time.time()
     if args.query and len(newpos_todo) > 0:
         # print("newexact")
         # print(newpos_todo)
@@ -497,8 +489,12 @@ def match_or_assign_alleles(alleles, lev, NewPosAlleles, NewNegAlleles, all_alle
 
     outcomes = get_negmatches_sql(alleles, NewNegAlleles, assignments, all_alleles_lists, loci_list, newpos_todo,
                                   args)
-
+    if args.timing:
+        print("\tassign_alleles_negmatch".format(lev), (" --- %s seconds ---" % (time.time() - time1)))
+    time1 = time.time()
     assignments, new_allele_outdict = sort_outcomes_and_assign(outcomes, assignments, connection, args)
+    if args.timing:
+        print("\tassign_alleles_all".format(lev), (" --- %s seconds ---" % (time.time() - time1)))
     return assignments, new_allele_outdict
 
 
@@ -1177,17 +1173,18 @@ def get_most_frequent_st(args,stlist,matching_st_ids,level,connection):
     ## get ids for all st (including all dsts) in stlist
     ## at the same time get number of strains with that mgt id
     ## do for each st in stlist
+    largest = (0, "")
 
-    largest = (0,"")
 
     for st in stlist:
-        sqlq = """SELECT * FROM "{app}_view_apcc" JOIN "{app}_isolate" ON "{app}_view_apcc".mgt_id =  "{app}_isolate".mgt_id WHERE ("{app}_view_apcc".ap{l}_0_st = {st} AND "{app}_view_apcc".ap{l}_0 IN ('{idlis}'));""".format(app=args.appname,l=level,st=st,idlis="','".join(list(map(str,matching_st_ids))))
+        sqlq = """SELECT * FROM "{app}_view_apcc" JOIN "{app}_isolate" ON "{app}_view_apcc".mgt_id =  "{app}_isolate".mgt_id WHERE "{app}_view_apcc".ap{l}_0_st = {st};""".format(
+            app=args.appname, l=level, st=st)
         match_isolates = sqlquery_to_outls(connection, sqlq)
         nohits = len(match_isolates)
         if args.printinfo:
-            print("st counts", nohits,st)
+            print("st counts", nohits, st)
         if nohits > largest[0]:
-            largest = (nohits,st)
+            largest = (nohits, st)
 
     return largest[1]
 
@@ -1331,25 +1328,24 @@ def gather_st_cc_odc_matches(allowed_diffs, totquery, idmatchcounts, odc_level, 
 
     # get st, cc and odc matches
     for id in idmatchcounts:
-        if idmatchcounts[id] == totquery:  # if no missmatches call st match
+        if len(idmatchcounts[id]) == 0:  # if no missmatches call st match
             stmatch.append(id)
 
         if odc_level:
             for missmatch in allowed_diffs:  # for each allowable missmatch level for odcs
 
-                odc_min_matches = str(totquery - int(missmatch))  # get minimum matches allowed for odc level
 
                 #  if matches are >= min allowed and number of zeros is less than limit add to match list
-                if idmatchcounts[id] >= int(odc_min_matches) and zerocounts[id] < zeromatch_limit:
+                if len(idmatchcounts[id]) <= int(missmatch) and zerocounts[id] < zeromatch_limit:
                     if missmatch == 1:
                         ccmatch.append(id)  # if missmatch = 1 then add to ccmatch
                     odcmatches[missmatch].append(id)  # add matchto odcmatch dict
 
         else:  # if not odc level then just get clonal complex matches
-            # TODO get 1 value from somewhere??
+            # TODO get 1 value from db tables
             min_matches = totquery - 1
             #  if matches are >= min allowed and number of zeros is less than limit add to match list
-            if idmatchcounts[id] >= int(min_matches) and zerocounts[id] < zeromatch_limit:
+            if len(idmatchcounts[id]) <= 1 and zerocounts[id] < zeromatch_limit:
                 ccmatch.append(id)
 
     return stmatch, ccmatch, odcmatches
@@ -1359,6 +1355,25 @@ def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         yield l[i:i + n]
+
+def get_mostvariable(args,conn):
+
+    sqlquery="""SELECT "identifier","locus_id" FROM "{appname}_allele" WHERE identifier NOT LIKE '-%';""".format(appname=args.appname)
+    stres = sqlquery_to_outls(conn, sqlquery)
+    maxno = {}
+    for row in stres:
+        if row[0] != '':
+            alleleno = int(row[0])
+            locus = row[1]
+            if locus not in maxno:
+                maxno[locus] = alleleno
+            else:
+                if alleleno > maxno[locus]:
+                    maxno[locus] = alleleno
+
+    sortedloci = sorted(maxno.items(), key=itemgetter(1), reverse=True)
+    sortedloci = [x[0] for x in sortedloci]
+    return sortedloci
 
 
 def get_matches(level, connection, inquery, allowed_diffs, tablesdict, matching_st_ids, odc_level, args, start_time,
@@ -1408,177 +1423,136 @@ def get_matches(level, connection, inquery, allowed_diffs, tablesdict, matching_
         print(level, "nested subset ST matches")
         return [], [], {}
 
-    ############ get matches with more than X matches to query
 
-    idmatchcounts = {}  # store number of matches including zeros and matches
-
+    idmissmatchcounts = {}
     zerocounts = {}  # store number of allele matches caused by 0 in query or existing allele
 
-    over_max = []
-    overmax_st = []
 
     totquery = 0
 
     initialise = True
     sublisno = 0
-    for no in tablesdict[level]:
-        locus_columns = tablesdict[level][no]
+    for no in list(sorted(tablesdict[level].keys())):
+        dash_nodash = {nodash_to_dash[x]:x for x in tablesdict[level][no]}
+        locus_columns = [nodash_to_dash[x] for x in tablesdict[level][no]]
+        sorted_locus_columns = []
+        for l in args.variable_alleles:
+            if l in locus_columns:
+                sorted_locus_columns.append(l)
 
-        sublists = chunks(locus_columns, 500)
 
-        for sublist in sublists:
+        if args.timing:
+            print("table no: {}, sublist no: {}".format(no, sublisno),
+                  (" --- %s seconds ---" % (time.time() - start_time)))
+        query = []
+        locusls = []
+        for i in sorted_locus_columns:
+            # q = nodash_to_dash[i]
+            query_allele = inquery[i]
+            locusls.append(dash_nodash[i])
+            if "new" in query_allele and "-" not in query_allele:
+                query.append('0')
+            else:
+                query.append(neg_to_pos(query_allele))
+        totquery += len(query)
+        locus_retreive_string = '","'.join(locusls)
+
+        #  depending on AP table the AP name has different column heading
+        if no == 0:
+            keyname = "id"
+            matchstring = ''
+        else:
+            keyname = "main_id"
+            matchstring =   """ WHERE {keyname} IN ('{idls}')""".format(keyname=keyname,idls="','".join(map(str, idmissmatchcounts.keys())))
+
+        # #  list of ids that are already over the allowdiff - below are placeholders to be added to after table 1 of a given level
+        # if over_max == []:
+        #     over_max_string = "(1000000000000000000000000000,2000000000000000000000000000000)"
+        # else:
+        #     over_max_string = "(" + ",".join(map(str, matching_st_ids.keys())) + ")"
+
+        if odc_level:
+            allowdiff = max(allowed_diffs)
+        else:
+            allowdiff = allowed_diffs[0]
+
+        #  if a subset of sts is selected (matching_st_ids is not empty)
+        #  then add conditional to sql requiring matches to be in subset
 
 
-            #### TEXT BASED SEARCH ####
-            # need to return results as list of tuples (apid, nomatches, no zero pairs[ 0 in q or s])
-            # 1 get subset aps from matching ap list
-            # 2 count matches and 0s
-            # 3 save as list of tuples
+        sqlquery = """SELECT "{kname}","{locusls}" FROM "{db}_ap{lev}_{tableno}"{match};""".format(
+            locusls=locus_retreive_string, db=dbname, lev=level, tableno=str(no), kname=keyname,
+            match=matchstring)
+        # print(sqlquery)
+        ## submit above huge query
 
-            sublisno +=1
 
+
+
+        stres = sqlquery_to_outls(connection, sqlquery)
+
+        if args.timing:
+            print("sql_query done", (" --- %s seconds ---" % (time.time() - start_time)))
+        stres = "\n".join(["\t".join(map(str,x)) for x in stres])
+        stres = re.sub(r"_[0-9]+", "", stres)
+        stres = re.sub(r"-", "", stres)
+        stres = stres.split("\n")
+        stres = [x.split("\t") for x in stres]
+        if args.timing:
+            print("regex_replace done", (" --- %s seconds ---" % (time.time() - start_time)))
+
+        min_matches = len(query) - int(allowdiff)
+        res = []
+        chunk = 50
+        chunkls = range(0, len(locusls), chunk)
+        if initialise:
+            idmissmatchcounts = {x[0]: [] for x in stres}
+            zerocounts = {x[0]: 0 for x in stres}
+        newap = query
+        existap = {x[0]:x[1:] for x in stres}
+
+        for pstart in chunkls:
+            start_time2 = time.time()
+            if pstart + chunk > len(newap):
+                pend = len(newap)
+            else:
+                pend = pstart + chunk
+            newmatch = dict(idmissmatchcounts)
+            for appos in idmissmatchcounts:
+                ex = existap[appos]
+                missmatchno = []
+                for pos in range(pstart, pend):
+                    #     try:
+                    if newap[pos] != ex[pos]:
+                        if newap[pos] != '0' and ex[pos] != '0':
+                            missmatchno += [(newap[pos], ex[pos])]
+                    if newap[pos] == '0' or ex[pos] == '0':
+                        zerocounts[appos] += 1
+                    # if not out:
+                    #     missmatchno+=[(newap[pos], ex[pos])]
+                newmatch[appos] += missmatchno
+            idmissmatchcounts = {x: newmatch[x] for x in newmatch if len(newmatch[x]) <= allowdiff}
             if args.timing:
-                print("table no: {}, sublist no: {}".format(no, sublisno),(" --- %s seconds ---" % (time.time() - start_time)))
-            query = []
-            locusls = []
-            for i in sublist:
-                q = nodash_to_dash[i]
-                query_allele = inquery[q]
-                locusls.append(i)
-                if "new" in query_allele and "-" not in query_allele:
-                    query.append('0')
-                else:
-                    query.append(query_allele)
-            totquery += len(query)
-            locus_retreive_string = '","'.join(locusls)
-
-            #  depending on AP table the AP name has different column heading
-            if no == 0:
-                keyname = "id"
-            else:
-                keyname = "main_id"
-
-            #  list of ids that are already over the allowdiff - below are placeholders to be added to after table 1 of a given level
-            if over_max == []:
-                over_max_string = "(1000000000000000000000000000,2000000000000000000000000000000)"
-            else:
-                over_max_string = "(" + ",".join(map(str,over_max)) + ")"
-
-            if odc_level:
-                allowdiff = max(allowed_diffs)
-            else:
-                allowdiff = allowed_diffs[0]
-
-            #  if a subset of sts is selected (matching_st_ids is not empty)
-            #  then add conditional to sql requiring matches to be in subset
-
-            matching_st_ids_set = list(set(matching_st_ids))
-
-            if args.subsetwcc or args.subsetst:
-                if matching_st_ids_set == []:
-                    subset_st_string = ""
-
-                else:
-                    subset_st_string = """ AND + "{keyname}" IN ('{matchststring}') """.format(keyname=keyname,
-                                                                                               matchststring="','".join(
-                                                                                                   map(str,
-                                                                                                       matching_st_ids_set)))
-            else:
-                subset_st_string = ""
-
-            sqlquery = """SELECT "{kname}","{locusls}" FROM "{db}_ap{lev}_{tableno}" WHERE ("{kname}" NOT IN {ovmax}{stsubset});""".format(locusls=locus_retreive_string,db=dbname, lev=level, tableno=str(no), kname=keyname, ovmax=over_max_string,stsubset=subset_st_string)
-            ## submit above huge query
-
-            stres = sqlquery_to_outls(connection, sqlquery)
-            if args.timing:
-                print("sql_query done".format(no, sublisno),(" --- %s seconds ---" % (time.time() - start_time)))
-
-            min_matches = len(query) - int(allowdiff)
-            res = []
-            for ap in stres:
-                apid = ap[0]
-                aplist =ap[1:]
-                zerocount = 0
-                matchcount = 0
-                for pos,suballele in enumerate(aplist):
-                    queryallele = query[pos]
-                    posquery = neg_to_pos(queryallele)
-                    possubj = neg_to_pos(suballele)
-                    if suballele == '0' or queryallele == '0':
-                        zerocount +=1
-                        matchcount +=1
-                    elif posquery == possubj:
-                        matchcount += 1
-                if matchcount >= min_matches:
-                    res.append((apid,matchcount,zerocount))
-
-            if args.timing:
-                print("text matching done".format(no, sublisno),(" --- %s seconds ---" % (time.time() - start_time)))
-
-            #### END TEXT BASED SEARCH ####
+                print("\tmatchingstep" + str(pstart), (" --- %s seconds ---" % (time.time() - start_time2)))
+        initialise = False
+        if idmissmatchcounts == {}:
+            break
+    if idmissmatchcounts == {}:
+        if args.printinfo:
+            print("No Ap matches at level {}".format(level))
+        return [], [], {}
 
 
-            # cumulative limit for missmatches
-            cumul_min_matches = str(totquery - int(allowdiff))
-
-            # print(level,len(res))
-
-            #  for each matching allele profile
-            if len(res) == 0:
-                break
-            else:
-                for i in res:
-                    ap_id = i[0]
-                    count = i[1]
-                    zerocount = int(i[2])
-                    if i[0] not in over_max:
-                        if initialise:  # for initial ap table
-
-                            # store number of matches for id
-                            if ap_id not in idmatchcounts:  # store number of matches for id
-                                idmatchcounts[ap_id] = count
-
-                            # store number of zeros per id
-                            if ap_id not in zerocounts:
-                                zerocounts[ap_id] = zerocount
-                            else:
-                                zerocounts[ap_id] += zerocount
-
-                        else:  # for subsequent allele profile tables
-                            if ap_id not in idmatchcounts:
-                                #  if allele profile was not below match threshold in previous table then it is not a match
-                                over_max.append(ap_id)
-                            else:
-                                #  if it was a match in previous tables then add up missmatches
-                                idmatchcounts[ap_id] += count
-
-                                #  if matches are less than cutoff, add ap_id to overmax and delete from idmatchcounts
-                                if idmatchcounts[ap_id] < int(cumul_min_matches):
-                                    over_max.append(ap_id)
-                    # print(ap_id,idmatchcounts[ap_id])
-
-            # if allele id over max diffs delete from matching aps
-            for allid in over_max:
-                if allid in idmatchcounts:
-                    del idmatchcounts[allid]
-
-            # if no remaining ap matches then return blanks - will result in assigning new values
-            if idmatchcounts == {}:
-                if args.printinfo:
-                    print("No Ap matches")
-                return [], [], {}
-
-            initialise = False
 
     if args.timing:
         print("{} after postgres get matches".format(level), (" --- %s seconds ---" % (time.time() - start_time)))
 
     # Need to remove APs for all dSTs when ONE dST is ruled out - i.e. 34.0 is ruled out but not 34.2, 34.3 - need to remove all three
     ## GET list of how many AP ids correspond to each ST - use to check if all neg profiles of an ST match (if not then remove match)
-    idmatchcounts = remove_sts_with_nonmatching_dsts(connection, level, dbname, idmatchcounts)
+    idmissmatchcounts = remove_sts_with_nonmatching_dsts(connection, level, dbname, idmissmatchcounts)
 
     #  Gather lists of allele profile ids either matching or passing cutoffs for ST, CC and ODC calls
-    stmatch, ccmatch, odcmatches = gather_st_cc_odc_matches(allowed_diffs, totquery, idmatchcounts, odc_level,
+    stmatch, ccmatch, odcmatches = gather_st_cc_odc_matches(allowed_diffs, totquery, idmissmatchcounts, odc_level,
                                                             zerocounts, args)
 
     if args.timing:
@@ -1588,7 +1562,7 @@ def get_matches(level, connection, inquery, allowed_diffs, tablesdict, matching_
     if len(stmatch) == 0:
         stres = []
     else:
-        id_list_st = "('" + "','".join(map(str,stmatch)) + "')"
+        id_list_st = "('" + "','".join(map(str, stmatch)) + "')"
         stsub = 'SELECT "st","dst" FROM "{}_ap{}_0" WHERE "id" in {} ;'.format(dbname, level, id_list_st)
 
         stres = sqlquery_to_outls(connection, stsub)
@@ -1597,7 +1571,7 @@ def get_matches(level, connection, inquery, allowed_diffs, tablesdict, matching_
     if len(ccmatch) == 0:
         ccres = []
     else:
-        id_list_cc = "('" + "','".join(map(str,ccmatch)) + "')"
+        id_list_cc = "('" + "','".join(map(str, ccmatch)) + "')"
         ### TODONE add mod for MGT9 to allow ODCs - need to get all 4 odc groups instead of one CC group
         ccsub = 'SELECT "st","dst","cc1_{}_id" FROM "{}_ap{}_0" WHERE "id" in {} ;'.format(level, dbname, level,
                                                                                            id_list_cc)
@@ -1613,8 +1587,9 @@ def get_matches(level, connection, inquery, allowed_diffs, tablesdict, matching_
                 if odcmatchlis == []:
                     odcresdict[dif] = []
                 else:
-                    id_list_odc = "('" + "','".join(map(str,odcmatchlis)) + "')"
-                    odcsub = 'SELECT "st","dst","cc2_{}_id" FROM "{}_ap{}_0" WHERE "id" in {} ;'.format(pos + 1, dbname,
+                    id_list_odc = "('" + "','".join(map(str, odcmatchlis)) + "')"
+                    odcsub = 'SELECT "st","dst","cc2_{}_id" FROM "{}_ap{}_0" WHERE "id" in {} ;'.format(pos + 1,
+                                                                                                        dbname,
                                                                                                         level,
                                                                                                         id_list_odc)
 
@@ -1961,10 +1936,12 @@ def main():
 
     ##read/process alleles file produced by genomes_to_alleles.py
 
-
+    start_time2 = time.time()
     no_tables = get_table_nos(conn,
                               args)  # descriptions of allele profile tables in format: {level:{table number: [list of locus names in table]}}
-
+    if args.timing:
+        print("\tget variable loci", (" --- %s seconds ---" % (time.time() - start_time2)))
+    args.variable_alleles = get_mostvariable(args,conn)
     st_results = {}
     cc_results = {}
     merge_results = {}

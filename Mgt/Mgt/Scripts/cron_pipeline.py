@@ -1047,10 +1047,6 @@ def runAllele2Db(args,conn,alleleslocation):
     else:
         q = ""
 
-    if args.local:
-        loc =  " --local "
-    else:
-        loc = ""
 
     if args.local:
         folder = path.dirname(path.dirname(path.abspath(__file__)))
@@ -1063,7 +1059,7 @@ def runAllele2Db(args,conn,alleleslocation):
         for f in alleles:
             ident = all2id[f]
             fullpath = uploadlocation + f
-            command += """python {scriptpath} {allelesfile} {appname} -s {settings} --apzerolim {apzero} -c -t none --project {mgtproj} --timing --id {ident}{nested}{query}{loc}\n""".format(allelesfile=fullpath,
+            command += """python {scriptpath} {allelesfile} {appname} -s {settings} --apzerolim {apzero} -c -t none --project {mgtproj} --local --timing --id {ident}{nested}{query}\n""".format(allelesfile=fullpath,
                                                                                                                                                         scriptpath=al2dbpath,
                                                                                                                                                         appname=args.appname,
                                                                                                                                                         tmp=args.tmpfolder,
@@ -1074,18 +1070,22 @@ def runAllele2Db(args,conn,alleleslocation):
                                                                                                                                                         nested=nestedcall,
                                                                                                                                                         query=q,
                                                                                                                                                         loc=loc)
-            proc = subprocess.Popen(command, shell=True)#,
-                                    #stdout=subprocess.PIPE,
-                                    #stderr=subprocess.PIPE)
-            out, err = proc.communicate()
+
+        with subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as sp:
+            for line in sp.stdout:
+                sys.stdout.write(line.decode())
+            for line in sp.stderr:
+                sys.stderr.write(line.decode())
+
+
 
     else:
         for f in alleles:
             ident = all2id[f]
             f = uploadlocation + f
-        destname = alleles_tmp + "/" + ident + "_alleles.fasta"
-        print("cp {} to {}".format(f,destname))
-        shutil.copyfile(f,destname)
+            destname = alleles_tmp + "/" + ident + "_alleles.fasta"
+            print("cp {} to {}".format(f,destname))
+            shutil.copyfile(f,destname)
 
 
 
@@ -1109,7 +1109,7 @@ cd {tmp}
     
 source /srv/scratch/lanlab/michael/miniconda_newkatana/bin/activate mgtdbpaper
     
-for allelesfile in {allelesfolder}/*.fasta; do python {scriptpath} $allelesfile {appname} -s {settings} --apzerolim {apzero} -c -t none --project {mgtproj} --timing{subset}{nested}; done""".format(allelesfolder=alleles_tmp,
+for allelesfile in {allelesfolder}/*.fasta; do python {scriptpath} $allelesfile {appname} -s {settings} --timing --apzerolim {apzero} -c -t none --project {mgtproj} --timing{subset}{nested}{query}; done""".format(allelesfolder=alleles_tmp,
                                                                                                                                                                             scriptpath=al2dbpath,
                                                                                                                                                                             appname=args.appname,
                                                                                                                                                                             tmp=args.tmpfolder,
@@ -1119,7 +1119,8 @@ for allelesfile in {allelesfolder}/*.fasta; do python {scriptpath} $allelesfile 
                                                                                                                                                                             apzero=args.apzero,
                                                                                                                                                                             test=args.testdb,
                                                                                                                                                                             subset=subset,
-                                                                                                                                                                            nested=nestedcall)
+                                                                                                                                                                            nested=nestedcall,
+                                                                                                                                                                            query=q)
 
         pbsfile = args.tmpfolder + "/"+uid+"_allele_2_db.pbs"
 
