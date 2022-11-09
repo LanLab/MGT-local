@@ -1054,8 +1054,8 @@ def runAllele2Db(args,conn,alleleslocation):
         folder = path.dirname(path.dirname(path.abspath(__file__)))
         al2dbpath = folder + "/MGT_processing/MgtAllele2Db/Allele_to_mgt_db.py"
         command = "cd {tmp}\n".format(tmp=args.tmpfolder)
-        command = '/bin/bash -c "cd {tmp};'.format(tmp=args.tmpfolder)
-        command += 'source {}'.format(conda_activate)
+        command = '/bin/bash -c "cd {tmp}\n'.format(tmp=args.tmpfolder)
+        command += 'source {}\n'.format(conda_activate)
         # command += "source ~/.bash_profile\n"
         # command += "source ~/.bashrc\n"
         # command += "source ~/.zshrc\n"
