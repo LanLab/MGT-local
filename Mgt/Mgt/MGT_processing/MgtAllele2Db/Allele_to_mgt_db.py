@@ -698,7 +698,7 @@ def get_negmatches_sql(posalleles,negalleles, NewNegAlleles, assignments, loci_l
                         if len(newnegs) == 0:  # if no matches to new allele
                             if "N" in newseq:  # if any missing data then call 0
                                 ##call as 0
-                                outcomes[locus] = ("novel neg allele", "0", newseq, muts)
+                                outcomes[locus] = ("novel neg allele", "", newseq, muts)
                             else:  # if no missing data call new pos allele
                                 outcomes[locus] = ("novel pos allele", "", newseq, muts)
                         elif len(newnegs) == 1:  # if only one match
