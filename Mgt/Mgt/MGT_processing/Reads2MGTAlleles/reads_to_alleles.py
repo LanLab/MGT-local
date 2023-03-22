@@ -456,7 +456,18 @@ def run_sistr(args, rename_skesa, strain, sistr_out, contam, serovar_fail):
 
     subprocess.Popen(sistr_cmd, shell=True).wait()
 
-    serotype_list = args.serotype.split(" or ")
+
+    serotype_list1 = args.serotype.split(" or ")
+    serotype_list = []
+    for x in serotype_list1:
+        serotype_list+= x.split(";")
+
+    # possible for dynamic db selection later
+    # serotype_d = dict(args.serotodb)
+    #
+    # serotype_list = list(serotype_d.keys())
+    #
+    # print(serotype_list)
 
     serovar_pass, prediction = sistr_filter(sistr_out, serotype_list)
 
@@ -664,7 +675,7 @@ def run_blast(query_seq, locus_db, wordsize, culling, pident, tempdir):
         # ungapped=True,
         out=tmp_out,
         outfmt=5,
-        max_target_seqs=100000,
+        max_target_seqs=10000000,
         max_hsps=5,
         word_size=wordsize,
         num_threads=cpus,

@@ -82,3 +82,9 @@ body{
 .projectCardBg {
 	background-color: #cce2e2; 
 }
+
+
+.noPadding {
+	padding: 0px !important;
+	margin: 0px !important;
+}

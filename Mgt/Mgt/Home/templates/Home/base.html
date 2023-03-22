@@ -37,7 +37,7 @@
 	{% block head_static %}{% endblock %}
 
 
-	<title>
+	<title class="container-fluid">
 		MGTdb - {% block titleName %} {% endblock %}
 	</title>
 </head>
@@ -46,7 +46,7 @@
 <body>
 	{% load for_display %}
 
-	<div class="jumbotron jumbotronOwn">
+	<div class="jumbotron jumbotronOwn noPadding">
 		<img src="{% static 'Home/images/header_v2.png'%}" height="150px">
 		<!-- div class="container">
 			<img src="{% static 'Home/images/logo_v36.png'%}" height="200" align="left">

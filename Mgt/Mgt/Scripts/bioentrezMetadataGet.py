@@ -54,7 +54,10 @@ def parse_meta(instring):
             if len(init_date) < 5:  # if only year then will be 2 or 4 chars i.e. 18 or 2018
                 outd["collection_date"] = ""
                 outd["collection_month"] = ""
-                outd["collection_year"] = init_date
+                if len(init_date) == 4 and init_date.isdigit():
+                    outd["collection_year"] = init_date
+                else:
+                    outd["collection_year"] = ""
             elif not strict_parsed:  # no full date available just get year
                 parsed = dateparse(init_date)
                 # print(parsed)
@@ -288,12 +291,13 @@ def get_reads_and_meta_frm_ncbi(ignore,args):
 
     if idlists == [[]]:
         print(record)
-        sys.exit("No isolates matching current parameters were found")
+        print("No isolates matching current parameters were found")
+        sys.exit(0)
     c=0
     for idlist in idlists:
         handle = Entrez.efetch(db="sra", id=idlist, rettype="runinfo", retmode="text",RetMax=100000)
         # tree = ET.parse(handle).getroot()
-        inp = handle.read().splitlines()
+        inp = handle.read().decode().splitlines()
 
         print("sra info",len(inp))
 

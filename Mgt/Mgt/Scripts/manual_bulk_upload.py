@@ -65,7 +65,7 @@ def parseargs():
                         action='store_true')
     parser.add_argument("--appname", help="App name", default="Salmonella")
     parser.add_argument("--projectPath", help="Path to project folder",
-                        default="/path/to/MGT/Mgt/Mgt")
+                        required=True)
     parser.add_argument("--projectName", help="Name of project",
                         default="Mgt")
 

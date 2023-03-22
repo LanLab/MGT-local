@@ -126,9 +126,11 @@ def run_metdata_get(args,ignore,conn):
     completedsrr,errlist = metadl_main(ignore,args)
 
     if len(completedsrr) == 0:
-        sys.exit("No new isolates to add to DB")
+        print("No new isolates to add to {} DB".format(args.appname))
+        sys.exit(0)
     else:
         print("{} isolates to be added to DB".format(len(completedsrr)))
+        sys.stderr.write("{} isolates to be added to {} DB".format(len(completedsrr),args.appname))
     try:
         addInfo(args.projectPath, args.projectName,args.appname,args.outpath,args.settings)
     except Exception as ex:
@@ -176,8 +178,9 @@ def ncbi_dl(ids,args):
     dlstring = "ascp -k1 -T -l 100m -P33001 -i {} --mode=recv --user=era-fasp --host=fasp.sra.ebi.ac.uk --file-list={} {}".format(key,dlpathfile,args.readsfolder)
     
     print(dlstring)
-    
-    subprocess.Popen(dlstring, shell=True).wait()
+
+    res = subprocess.run(dlstring.split(" "), capture_output=True)
+    out = res.stdout
 
     os.remove(dlpathfile)
 
@@ -710,7 +713,8 @@ def run_reads_to_alleles(args,conn):
     res = sqlquery_to_outls(conn,reads_query)
     # print(res)
     if len(res) == 0:
-        sys.exit("No new read sets or genomes to process")
+        print("No new read sets or genomes to process")
+        return
     genomes = [x for x in res if x[5] == "W"]
     reads = [x for x in res if x[5] == "U"]
 
@@ -722,15 +726,17 @@ def run_reads_to_alleles(args,conn):
     elif len(reads) > 0:
         res = reads
     else:
-        sys.exit("No new read sets or genomes to process")
+        print("No new read sets or genomes to process")
+        return
 
     ids = [str(x[0]) for x in res]
 
     if len(ids) == 0:
-        sys.exit("No new read sets to process")
+        print("No new read sets to process")
+        return
 
 
-    update_status("I", args, conn, ids, "server_status")
+    # update_status("I", args, conn, ids, "server_status")
 
     # id2idno = {x[1]: x[0] for x in res}
     id2projid = {str(x[0]): str(x[2]) for x in res}
@@ -866,10 +872,11 @@ def run_reads_to_alleles(args,conn):
         if args.local:
             ##scriptpath,refalleles,readsets,assembliesfolder,args
             sshcmd = generate_commands_local(r2alPath,allelepos,readlocs,assembliesfolder,args,genomeinput)
-            proc = subprocess.Popen(sshcmd, shell=True,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE)
-            out, err = proc.communicate()
+
+            res = subprocess.run(sshcmd, shell=True, capture_output=True)
+            out = res.stdout
+            err = res.stderr
+
             print(out.decode(), err.decode())
 
         else:
@@ -878,18 +885,17 @@ def run_reads_to_alleles(args,conn):
                                                            uid, single)
             else:
                 pbsfile,sshcmd = generate_commands_katana(r2alPath,allelepos,readsfolder,assembliesfolder,args,uid,single)
-            proc = subprocess.Popen(sshcmd, shell=True,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE)
-            out, err = proc.communicate()
+
+
+            res = subprocess.run(sshcmd, shell=True,capture_output=True)
+            out = res.stdout
             jobid = out.decode('utf8')
             print(jobid)
             jobid = jobid.splitlines()[-1].split(".")[0].split("[")[0]
 
             print("job submitted with ID: {}".format(jobid))
-            wait_till_finished(jobid)
-            print(out, err)
 
+            wait_till_finished(jobid)
 
         strainsWithAlleles = check_r2al_outcomes(args,sublist,conn,assembliesfolder,readlocs,id2projid,id2user,projid2projname)
 
@@ -1005,7 +1011,8 @@ def runAllele2Db(args,conn,alleleslocation):
     query_subset_res = list([x for x in res if x[3]])
     runasquery = True
     if len(submission_subset_res) == 0 and len(query_subset_res) == 0:
-        sys.exit("no new alleles to process")
+        print("no new alleles to process")
+        return
     elif len(submission_subset_res) != 0:
         res = submission_subset_res
         runasquery = False
@@ -1351,7 +1358,7 @@ def main():
         # runSpeciesSpecific(args,conn,settings)
 
     cleanup(args)
-
+    return
 
 if __name__ == '__main__':
     main()

@@ -94,7 +94,7 @@ def addIsolate(appClass, projObj, isolateId, server_status, priv_status, file_fo
         if fkObj:
             i.extFks.add(fkObj)
 
-        sys.stderr.write("Note: isolate saved succesfully " + isolateId + '\n')
+        sys.stdout.write("Note: isolate saved succesfully " + isolateId + '\n')
     except:
         sys.stderr.write("Error: unable to save isolate to db " + isolateId + '\n')
         raise

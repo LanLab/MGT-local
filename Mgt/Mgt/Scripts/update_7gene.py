@@ -10,8 +10,8 @@ import sys
 
 def parseargs():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--projectPath", help="Path to project folder",
-                        default="/path/to/MGT/Mgt/Mgt")
+    parser.add_argument("--projectPath", help="Path to project folder ('/path/to/MGT/Mgt/Mgt')",
+                        required=True)
     parser.add_argument("--projectName", help="Name of project",
                         default="Mgt")
     parser.add_argument("--appname", help="mgt application name",

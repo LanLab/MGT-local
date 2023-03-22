@@ -4,9 +4,8 @@ import sys
 
 if __name__ == "__main__":
     # os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Mgt.settings_template")
-
     if '--settings' not in sys.argv: 
-        print ('Using default settings file "settings_template.py". Please ensure you filled in the template, or use the --settings parameter to specify a template file.')
+        print ('Using default settings file "settings_template.py". Please ensure you filled in the template, or use the --settings <Mgt.settings_file> parameter to specify a template file.')
         
     try:
         from django.core.management import execute_from_command_line

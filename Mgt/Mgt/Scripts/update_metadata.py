@@ -54,8 +54,8 @@ def parseargs():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,usage="this must be run from Scripts folder within mgt project you want to edit")
     parser.add_argument("--appname", help="App name", default="Salmonella")
     parser.add_argument("--user", help="user name for files", default="Lanlab")
-    parser.add_argument("--projectPath", help="Path to project folder",
-                        default="/path/to/MGT/Mgt/Mgt")
+    parser.add_argument("--projectPath", help="Path to project folder ('/path/to/MGT/Mgt/Mgt')",
+                        required=True)
     parser.add_argument("--projectName", help="Name of project",
                         default="Mgt")
     parser.add_argument("--mgt1", help="use toggle to update mgt1 (not updated by default)",

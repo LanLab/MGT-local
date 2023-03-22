@@ -229,7 +229,7 @@ def handleIsolate(appClass, projObj, isolateName, privStatus, mgt1, serovar, loc
 
 	else:
 
-		sys.stderr.write("Note: isolate with id " + isolateName + " already exists in project " + projObj.identifier +  " for user " + projObj.user.userId + "\n")
+		sys.stdout.write("Note: isolate with id " + isolateName + " already exists in project " + projObj.identifier +  " for user " + projObj.user.userId + "\n")
 
 
 def getPrivStatusCode(privStatusStr):

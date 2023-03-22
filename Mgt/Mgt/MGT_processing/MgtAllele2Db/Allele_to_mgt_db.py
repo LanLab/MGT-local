@@ -9,6 +9,7 @@ import math
 import importlib.util
 import re
 from operator import itemgetter
+from collections import OrderedDict
 
 sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
 # print(path.dirname(path.dirname(path.dirname(path.dirname(path.abspath(__file__))))))
@@ -231,7 +232,7 @@ def get_allele_profile(connection, lev, NewPosAlleles, NewNegAlleles, Allloc, Po
                 all_assignments[locus] = profile[locus]
 
     if args.query and profile == "newst":
-        return profile, "", "", ""
+        return profile, all_assignments, ""
 
     if len(profile.keys()) != len(loci_list):  # Catch cases where a locus is missing from allelic profile
         print(profile)
@@ -936,7 +937,7 @@ def get_max_loci_dict(outcome, connection, args):
 
 def rec_get_merge_cclis(ccls, newmerge, level, conn, args):
     if newmerge == 0:
-        return "','".join(ccls)
+        return ccls
     else:
         query = """ SELECT DISTINCT "identifier","merge_id_id" FROM "{0}_cc1_{1}" WHERE ("identifier" in ('{2}') OR "merge_id_id" in ('{2}'));""".format(
             args.appname, level, "','".join(ccls))
@@ -949,6 +950,74 @@ def rec_get_merge_cclis(ccls, newmerge, level, conn, args):
         if args.timing:
             print(level, new, ccls, tmpls)
         return rec_get_merge_cclis(tmpls, new, level, conn, args)
+
+def rec_get_merge_odclis(odcls, newmerge, level, conn, args):
+    if newmerge < 1:
+        return odcls
+    else:
+        query = """ SELECT DISTINCT "identifier","merge_id_id" FROM "{0}_cc2_{1}" WHERE ("identifier" in ('{2}') OR "merge_id_id" in ('{2}'));""".format(
+            args.appname, level, "','".join(odcls))
+        res = sqlquery_to_outls(conn, query)
+        tmpls = odcls + [x[0] for x in res] + [x[1] for x in res]
+        tmpls = list(set(map(str, tmpls)))
+        tmpls = [x for x in tmpls if x != "None"]
+        tmpls = [x for x in tmpls if x != ""]
+        new = len(tmpls) - len(odcls)
+        if args.timing:
+            print(level, new, odcls, tmpls)
+        return rec_get_merge_odclis(tmpls, new, level, conn, args)
+
+
+
+# def get_merge_cclis(connection, cc, level,db):
+#     """
+#     Gather all CCs that merge with the input CC then gather all CCs that merge with those CCs and return as list
+#     :param connection: sql connection
+#     :param cc: input clonal complex to check for merges
+#     :param level: MGT level
+#     :param db: database name (= args.psql)
+#     :return: comma joined list of clonal complexes of original and merges of input cc
+#     """
+#     #  Round one cc retreival - get any cc that input cc merges to or that merge to the input cc and store in list
+#     sqlquery = """ SELECT DISTINCT "identifier","merge_id_id"
+#     FROM "{0}_cc1_{1}"
+#     WHERE ("identifier" in ('{2}') OR "merge_id_id" in ('{2}'));""".format(db, level, "','".join(cc))
+#
+#     tuplelis = sqlquery_to_outls(connection, sqlquery)
+#     # print(cc)
+#     # print(tuplelis)
+#
+#     tmpls = [x[0] for x in tuplelis] + [x[1] for x in tuplelis]
+#     tmpls = list(set(map(str, tmpls)))
+#     tmpls = [x for x in tmpls if x != "None"]
+#     tmpls = [x for x in tmpls if x != ""]
+#
+#
+#
+#     cclis = []
+#     for i in tmpls:
+#         if i not in cclis:
+#             cclis.append(i)
+#     # print(cclis)
+#     #  Round two cc retreival - get any cc that round 1 ccs merges to or that merge to the round 1 ccs and store in list
+#     sqlquery = """ SELECT DISTINCT "identifier","merge_id_id"
+#     FROM "{0}_cc1_{1}"
+#     WHERE ("identifier" in ('{2}') OR "merge_id_id" in ('{2}'));""".format(db, level, "','".join(cclis))
+#
+#     tuplelis = sqlquery_to_outls(connection, sqlquery)
+#     tmpls = [x[0] for x in tuplelis] + [x[1] for x in tuplelis]
+#     tmpls = list(set(map(str, tmpls)))
+#     tmpls = [x for x in tmpls if x != "None"]
+#     tmpls = [x for x in tmpls if x != ""]
+#
+#     cclis = []
+#     for i in tmpls:
+#         if i not in cclis:
+#             cclis.append(i)
+#     # print(cclis)
+#     cclis = ",".join(cclis)
+#
+#     return cclis
 
 
 def get_next_dst(connection, args, level, st):
@@ -985,8 +1054,75 @@ def get_next_st(connection, args, level):
         nextst = res[0][0] + 1
     return nextst
 
+def match_existing_st_to_cc(st,level,odclev,odcdiffs,connection,args):
+    """
+    if function is called we know that st exists
+    lookup STs in ap{level}_0 and get cc1_{level}_id variables
+    if all the same return that
+    if different return lowest and add merge
+    """
+    cc = None
+    merges = []
+    odc = {x: 0 for x in odcdiffs}
+    odcmerges = {x: [] for x in odcdiffs}
 
-def call_st_cc(stres, ccres, odcres, profile, level, odcdiffs, connection, args):
+    if not odclev:
+        sqlq = """SELECT st,cc1_{}_id FROM "{}_ap{}_0" WHERE st='{}'""".format(level,args.appname, level,st)
+        res = sqlquery_to_outls(connection, sqlq)
+        ccls = []
+        for hit in res:
+            st = hit[0]
+            cc = int(hit[1])
+            if cc not in ccls:
+                ccls.append(cc)
+        if len(ccls) == 1:
+            cc = ccls[0]
+        else:
+            cc = min(ccls)
+            merges = [(cc, x) for x in ccls if x != cc]
+            merges = list(set(merges))
+        return cc,merges,odc,odcmerges
+    else:
+        odcidnos = [x for x in odcdiffs.values() if x != 1]
+
+        # for pos in range(1, len(odcdiffs)):  # get 1,2,3
+        #     odcidnos.append(pos + 1)
+        odcids = ["cc2_{}_id".format(x) for x in odcidnos]
+        sqlq = """SELECT st,cc1_{}_id,{} FROM "{}_ap{}_0" WHERE st='{}'""".format(level, ",".join(odcids),args.appname, level, st)
+        res = sqlquery_to_outls(connection, sqlq)
+        odcmatches = {x:[] for x in odcdiffs}
+        ccls = []
+        for hit in res:
+            cc = hit[1]
+            odcs = hit[2:]
+            if cc not in ccls:
+                ccls.append(cc)
+            for odcdiff,pos in odcdiffs.items():
+                odcres = hit[pos]
+                if odcres not in odcmatches[odcdiff]:
+                    odcmatches[odcdiff].append(odcres)
+        # print(odcmatches)
+        if len(ccls) == 1:
+            cc = ccls[0]
+        else:
+            cc = min(ccls)
+            merges = [(cc, x) for x in ccls if x != cc]
+            merges = list(set(merges))
+
+        for odcdiff,odchits in odcmatches.items():
+            if len(odchits) == 1:
+                odc[odcdiff] = odchits[0]
+            else:
+                odc[odcdiff] = min(odchits)
+                odcm = [(odc[odcdiff], x) for x in odchits if x != odc[odcdiff]]
+                odcm = list(set(odcm))
+                odcmerges[odcdiff] = odcm
+                # print(odcmerges)
+                # sl(100000)
+
+    return cc,merges,odc,odcmerges
+
+def call_st_cc(stres, ccres, odcres, profile, level, odcdiffs,odclev, connection, args):
     """
     Assign ST, CC, ODCs and identify merges for CC and ODCs assigned
 
@@ -1003,7 +1139,15 @@ def call_st_cc(stres, ccres, odcres, profile, level, odcdiffs, connection, args)
     :return: st,dst and cc as assignment values, merges as list of ccs merged with assigned cc,
     odc dictionary of odc assignments, odcmerges dictionary of lists one for each odc with corresponding merges
     """
+    start_time2 = time.time()
+    st = None
+    dst = None
+    cc = None
+    merges = None
+    odc = None
+    odcmerges = None
 
+    isnewst = False
     ### st dst calling ###
 
     if args.query and profile == "newst":
@@ -1059,6 +1203,7 @@ def call_st_cc(stres, ccres, odcres, profile, level, odcdiffs, connection, args)
             else:
                 st = nextst
                 dst = 0
+            isnewst = True
     else:
         sthits = []
         for i in stres:
@@ -1102,6 +1247,7 @@ def call_st_cc(stres, ccres, odcres, profile, level, odcdiffs, connection, args)
                         nextst = get_next_st(connection, args, level)
                         st = nextst
                         dst = 1
+                        isnewst = True
 
 
 
@@ -1126,89 +1272,107 @@ def call_st_cc(stres, ccres, odcres, profile, level, odcdiffs, connection, args)
                     else:
                         st = get_next_st(connection, args, level)
                         dst = 0
+                        isnewst = True
                 else:
                     dst = 0
-
+    if args.timing:
+        print("\tst assign", (" --- %s seconds ---" % (time.time() - start_time2)))
     ### CC calling ###
 
-    cchits = list()
-    merges = list()
-
-    for hit in ccres:
-        if hit[2] != None and hit[2] != 0 and hit[2] != "":
-            cchits.append(hit[2])
-
-    cchits = list(set(cchits))  # remove redundant entries
-
-    if len(cchits) == 0:
-        if args.query:
-            cc = 0
-        else:
-            # get max cc value from cc table for correct level
-            nextstquery = """SELECT MAX("identifier") FROM "{}_cc1_{}";""".format(args.appname, level)
-            res = sqlquery_to_outls(connection, nextstquery)
-            if res[0][0] == None:
-                nextcc = 1
-            else:
-                nextcc = res[0][0] + 1  # get next cc level (max+1)
-            cc = nextcc
+    #check if ST is existing, if so then match to existing CC and ODC
+    if st != None and st != 0 and not isnewst:
+        cc,merges,odc,odcmerges = match_existing_st_to_cc(st,level,odclev,odcdiffs,connection,args)
+        # print("\nUSED NEW CC MERGING")
+        # print(f"st:{st} dst {dst} cc:{cc} merges:{merges} odc:{odc} odcmerges{odcmerges}\n")
+        if args.timing:
+            print("\tcc/odc assign (existing st)", (" --- %s seconds ---" % (time.time() - start_time2)))
     else:
-        cc = min(cchits)
+        cchits = list()
+        merges = list()
 
-        # make non-redundant pairwise tuples of merge pairs
-        # this is only new merges - others may exist for this cc in the database
+        for hit in ccres:
+            if hit[2] != None and hit[2] != 0 and hit[2] != "":
+                cchits.append(hit[2])
 
-        if args.query:
-            merges = []
-        else:
-            merges = [(cc, x) for x in cchits if x != cc]
-            merges = list(set(merges))
+        cchits = list(set(cchits))  # remove redundant entries
 
-
-    #### ODC calling
-
-    odcmerges = {}
-    odc = {}
-    # print("ODCRES", odcres, odcdiffs)
-
-    if odcres == {}:
-        odcres = {x: [] for x in odcdiffs}
-
-    for pos in range(1, len(odcdiffs)):  # get 1,2,3,4
-        odchits = []
-        odcdiff = odcdiffs[pos]  # get odc difference number for odc level
-        odcmerges[odcdiff] = []
-        odcno = pos + 1
-        for hit in odcres[odcdiff]:
-            if hit[2] != 0:
-                odchits.append(hit[2])
-
-        odchits = list(set(odchits))  # non-redundant list of odc matches
-
-        if len(odchits) == 0:  # if no matches to odc assign new
+        if len(cchits) == 0:
             if args.query:
-                odc[odcdiff] = 0
+                cc = 0
             else:
-                ## get next odc number for level
-                nextstquery = """SELECT MAX("identifier") FROM "{}_cc2_{}";""".format(args.appname, odcno)
+                # get max cc value from cc table for correct level
+                nextstquery = """SELECT MAX("identifier") FROM "{}_cc1_{}";""".format(args.appname, level)
                 res = sqlquery_to_outls(connection, nextstquery)
                 if res[0][0] == None:
-                    nextodc = 1
+                    nextcc = 1
                 else:
-                    nextodc = res[0][0] + 1
-                odc[odcdiff] = nextodc
-        else:  # if there are matches assign to smallest value and get any merges as list of merge tuples
+                    nextcc = res[0][0] + 1  # get next cc level (max+1)
+                cc = nextcc
+        else:
+            cchits = list(map(str,cchits))
+            cchits = rec_get_merge_cclis(cchits,1,level,connection,args)
+            cchits = list(map(int, cchits))
+            cc = min(cchits)
 
-            odccall = min(odchits)
-            odc[odcdiff] = odccall  # assign the smallest odc value to result
-
-            mergesodclist = [(odccall, x) for x in odchits if x != odccall]  # make merge tuples
-            mergesodclist = list(set(mergesodclist))  # make merge tuples non-redundant
+            # make non-redundant pairwise tuples of merge pairs
+            # this is only new merges - others may exist for this cc in the database
 
             if args.query:
-                odcmerges[odcdiff] = []
+                merges = []
             else:
-                odcmerges[odcdiff] = mergesodclist
+                merges = [(cc, x) for x in cchits if x != cc]
+                merges = list(set(merges))
+
+        if odclev:
+            #### ODC calling
+
+            odcmerges = {}
+            odc = {}
+            # print("ODCRES", odcres, odcdiffs)
+
+            if odcres == {}:
+                odcres = {x: [] for x in odcdiffs}
+
+            for odcdiff,odcno in odcdiffs.items():  # get 1,2,3
+                odchits = []
+                odcmerges[odcdiff] = []
+                for hit in odcres[odcdiff]:
+                    if hit[2] != 0:
+                        odchits.append(hit[2])
+
+                odchits = list(set(odchits))  # non-redundant list of odc matches
+
+                odchits = list(map(str, odchits))
+                odchits = [x for x in odchits if x!= "None"]
+
+                if len(odchits) == 0:  # if no matches to odc assign new
+                    if args.query:
+                        odc[odcdiff] = 0
+                    else:
+                        ## get next odc number for level
+                        nextstquery = """SELECT MAX("identifier") FROM "{}_cc2_{}";""".format(args.appname, odcno)
+                        res = sqlquery_to_outls(connection, nextstquery)
+                        if res[0][0] == None:
+                            nextodc = 1
+                        else:
+                            nextodc = res[0][0] + 1
+                        odc[odcdiff] = nextodc
+                else:  # if there are matches assign to smallest value and get any merges as list of merge tuples
+
+                    odchits = rec_get_merge_odclis(odchits, 1, odcno, connection, args)
+                    odchits = list(map(int, odchits))
+                    odccall = min(odchits)
+                    odc[odcdiff] = odccall  # assign the smallest odc value to result
+
+                    mergesodclist = [(odccall, x) for x in odchits if x != odccall]  # make merge tuples
+                    mergesodclist = list(set(mergesodclist))  # make merge tuples non-redundant
+
+                    if args.query:
+                        odcmerges[odcdiff] = []
+                    else:
+                        odcmerges[odcdiff] = mergesodclist
+        if args.timing:
+            print("\tcc/odc assign (new st)", (" --- %s seconds ---" % (time.time() - start_time2)))
 
     return st, dst, cc, merges, odc, odcmerges
 
@@ -1515,9 +1679,9 @@ def get_matches(level, connection, inquery, allowed_diffs, tablesdict, odc_level
         #     over_max_string = "(" + ",".join(map(str, matching_st_ids.keys())) + ")"
 
         if odc_level:
-            allowdiff = max(allowed_diffs)
+            allowdiff = max(list(allowed_diffs.keys()))
         else:
-            allowdiff = allowed_diffs[0]
+            allowdiff = list(allowed_diffs.keys())[0]
 
         #  if a subset of sts is selected (matching_st_ids is not empty)
         #  then add conditional to sql requiring matches to be in subset
@@ -1562,17 +1726,18 @@ def get_matches(level, connection, inquery, allowed_diffs, tablesdict, odc_level
                 pend = pstart + chunk
             newmatch = dict(idmissmatchcounts)
             for appos in idmissmatchcounts:
-                ex = existap[appos]
-                missmatchno = []
-                for pos in range(pstart, pend):
-                    #     try:
-                    if newap[pos] != ex[pos]:
-                        if newap[pos] != '0' and ex[pos] != '0':
-                            missmatchno += [(newap[pos], ex[pos])]
-                    if newap[pos] == '0' or ex[pos] == '0':
-                        zerocounts[appos] += 1
-                    # if not out:
-                    #     missmatchno+=[(newap[pos], ex[pos])]
+                if appos in existap:
+                    ex = existap[appos]
+                    missmatchno = []
+                    for pos in range(pstart, pend):
+                        #     try:
+                        if newap[pos] != ex[pos]:
+                            if newap[pos] != '0' and ex[pos] != '0':
+                                missmatchno += [(newap[pos], ex[pos])]
+                        if newap[pos] == '0' or ex[pos] == '0':
+                            zerocounts[appos] += 1
+                        # if not out:
+                        #     missmatchno+=[(newap[pos], ex[pos])]
                 newmatch[appos] += missmatchno
             idmissmatchcounts = {x: newmatch[x] for x in newmatch if len(newmatch[x]) <= allowdiff}
             if args.timing:
@@ -1621,23 +1786,23 @@ def get_matches(level, connection, inquery, allowed_diffs, tablesdict, odc_level
         ccres = sqlquery_to_outls(connection, ccsub)
 
     #  convert ap ids to ST,DST and ODC ids for each odc level, save each level in odcresdict
-    odcresdict = {x: [] for x in allowed_diffs if x != 1}
-
+    odcresdict = {x: [] for x in allowed_diffs}
+    #TODO make dict that has {cctableno:diffno}
     if odc_level:
-        for pos, dif in enumerate(allowed_diffs):
-            if pos != 0:
-                odcmatchlis = odcmatches[dif]
-                if odcmatchlis == []:
-                    odcresdict[dif] = []
-                else:
-                    id_list_odc = "('" + "','".join(map(str, odcmatchlis)) + "')"
-                    odcsub = 'SELECT "st","dst","cc2_{}_id" FROM "{}_ap{}_0" WHERE "id" in {} ;'.format(pos + 1,
-                                                                                                        dbname,
-                                                                                                        level,
-                                                                                                        id_list_odc)
+        print(allowed_diffs)
+        for dif,pos in allowed_diffs.items():
+            odcmatchlis = odcmatches[dif]
+            if odcmatchlis == []:
+                odcresdict[dif] = []
+            else:
+                id_list_odc = "('" + "','".join(map(str, odcmatchlis)) + "')"
+                odcsub = 'SELECT "st","dst","cc2_{}_id" FROM "{}_ap{}_0" WHERE "id" in {} ;'.format(pos,
+                                                                                                    dbname,
+                                                                                                    level,
+                                                                                                    id_list_odc)
 
-                    odcres = sqlquery_to_outls(connection, odcsub)
-                    odcresdict[dif] = odcres
+                odcres = sqlquery_to_outls(connection, odcsub)
+                odcresdict[dif] = odcres
 
     if args.printinfo:
         print("\nstres", stres, "\nCCres", ccres, "\nODCres", odcresdict)
@@ -1761,7 +1926,7 @@ def split_in_alleles(InputAllelesFile):
     return AllCalls, PosMatch, NewPos, NewNeg, ZeroCalls, MGT1, species_sero, dash_to_nodash, nodash_to_dash
 
 
-def write_to_tables(alleles_out_dict, profile, level, st, dst, cc, merges, args, odc={}, odcmerge={}, exact=False):
+def write_to_tables(alleles_out_dict, profile, level, st, dst, cc, merges, args, odc={}, odcmerge={},odcdiffs={}, exact=False):
     """
 
     Write data to database for a given MGT level
@@ -1800,10 +1965,10 @@ def write_to_tables(alleles_out_dict, profile, level, st, dst, cc, merges, args,
         doAddClonalComplexes(projectpath, args.mgtapp, args.appname, cctable, mgtname, cc, st, dst, merges,args.settings)
 
         if odc != {}:  # {} is defualt so this is true when level is not used for odc
-            for odcno in odc:
-                cc2_no = list(odc.keys()).index(odcno) + 2
-                cctable = "2_" + str(cc2_no)
-
+            for odcno,tableno in odcdiffs.items():
+                # cc2_no = list(odc.keys()).index(odcno) + 2
+                cctable = "2_" + str(tableno)
+                # print(odc,odcmerge)
                 doAddClonalComplexes(projectpath, args.mgtapp, args.appname, cctable, mgtname, odc[odcno], st, dst,
                                      odcmerge[odcno],args.settings)
 
@@ -1845,7 +2010,8 @@ def write_finalout(isolate_info, stresults, no_tables, conn, view_update, MGT1Ca
             update_status(0, args, conn, [input_acc], "mgt1", "id")
 
     if args.appname == "Vibrio":
-        update_status(all_assignments["VC2210"], args, conn, [input_acc], "vc2210", "id")
+        if "VC2210" in all_assignments:
+            update_status(all_assignments["VC2210"], args, conn, [input_acc], "vc2210", "id")
         if MGT1Call in ["69","515"]:
             update_status("true", args, conn, [input_acc], "serovar", "id")
         else:
@@ -1896,6 +2062,17 @@ def load_settings(args):
     spec.loader.exec_module(settings)
 
     return settings
+
+def get_odc_diffs(args,level,conn):
+    query = f"""SELECT display_table,differences_max,scheme_id,display_order FROM "{args.appname}_tables_cc" WHERE display_table=2 """
+    res = sqlquery_to_outls(conn, query)
+    res = sorted(res,key=lambda x:x[1])
+    odcdiffs = OrderedDict()
+    for x in res:
+        if x[1] != 1:
+            odcdiffs[x[1]] = x[3]
+    # print(odcdiffs)
+    return odcdiffs
 
 def check_alleles_file_format(args, conn, allelesfile,StrainName):
     InputAlleles = SeqIO.parse(allelesfile, "fasta")
@@ -1998,6 +2175,8 @@ def main():
     maxlevel = get_max_scheme(conn, args)
     minlevel = get_min_scheme(conn, args)
 
+    odcdiffs = OrderedDict()
+
     for level in range(minlevel, maxlevel + 1):
         start_time1 = time.time()
         """ 1 - get allele profile for current level """
@@ -2052,15 +2231,20 @@ def main():
         new_alleles_results[level] = new_allele_outdict
 
         """ 2 - get matches of allele profile to existing allele profiles - exact for st inexact for cc/odc######## """
-
         ## TODO get num diffs from DB
+
+
+
         if level == maxlevel:
-            nodiffs = [1, 2, 5, 10]
             odclev = True
+            nodiffs = get_odc_diffs(args, level, conn)
+            odcdiffs = nodiffs
         else:
             odclev = False
-            nodiffs = [1]
+            nodiffs = {1:1}
 
+
+        # print(nodiffs)
         """
         stres = matching sequence types to allele profile in list of tuples [(stA,dstA),(stB,dstB)...]
 
@@ -2101,8 +2285,7 @@ def main():
             cc = stres[0][2]
             if odclev:
                 for odc in nodiffs:
-                    if odc != 1:
-                        odcdict[odc] = stres[0][3]
+                    odcdict[odc] = stres[0][3]
             st_results[level] = (st, dst)
             cc_results[level] = cc
             merge_results[level] = merges
@@ -2110,11 +2293,9 @@ def main():
         else:
             exact_level[level] = False
 
-            if odclev:  # need to add odcs if level is used to get them (i.e. MGT9)
-                st, dst, cc, merges, odcdict, odcmerges = call_st_cc(stres, ccres, odcres, profile, level,
-                                                                     nodiffs, conn, args)
-            else:
-                st, dst, cc, merges, na, nb = call_st_cc(stres, ccres, odcres, profile, level, nodiffs, conn, args)
+            st, dst, cc, merges, odcdict, odcmerges = call_st_cc(stres, ccres, odcres, profile, level,
+                                                                     nodiffs,odclev, conn, args)
+
 
             """
             st, dst and cc are returned as integers
@@ -2129,9 +2310,9 @@ def main():
             cc_results[level] = cc
             merge_results[level] = merges
 
-            print(st_results)
-            print(cc_results)
-            print(merge_results)
+            # print(st_results)
+            # print(cc_results)
+            # print(merge_results)
 
 
         if args.timing:
@@ -2143,14 +2324,14 @@ def main():
             print("Level ", level, ", ST dST: ", st, dst, " ,CC: ", cc, " Merges: ",merges)
 
         if not args.query:
-            if level != maxlevel:  # if last level then use to make odcs
+            if not odclev:  # if last level then use to make odcs
                 write_to_tables(new_alleles_results[level], profile_results[level], level, st_results[level][0],
                                 st_results[level][1], cc_results[level], merge_results[level], args,
                                 exact=exact_level[level])
             else:
                 write_to_tables(new_alleles_results[level], profile_results[level], level, st_results[level][0],
                                 st_results[level][1], cc_results[level], merge_results[level], args, odc=odcdict,
-                                odcmerge=odcmerges,
+                                odcmerge=odcmerges,odcdiffs=odcdiffs,
                                 exact=exact_level[level])
         conn.commit()
         if args.timing:

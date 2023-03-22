@@ -5,14 +5,13 @@ import json
 import importlib
 
 def setupEnvPath(projectPath, projectName,settingpath):
-	if ".py" not in settingpath:
-		sys.path.append(projectPath)
-		os.environ['DJANGO_SETTINGS_MODULE'] = projectName + '.settings_' + settingpath
-	else:
-		dir = os.path.dirname(settingpath)
-		base = os.path.basename(settingpath).replace(".py","")
-		sys.path.append(dir)
-		os.environ['DJANGO_SETTINGS_MODULE'] =  projectName + "." + base.replace(".py","")
+
+	if "/" in settingpath:
+		b = os.path.basename(settingpath)
+		b = b.replace(".py","")
+		settingpath = "Mgt."+b
+	sys.path.append(projectPath)
+	os.environ['DJANGO_SETTINGS_MODULE'] = settingpath
 	django.setup()
 
 
