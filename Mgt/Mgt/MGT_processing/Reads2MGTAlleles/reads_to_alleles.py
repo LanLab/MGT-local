@@ -90,12 +90,13 @@ def main(args):
         raw_assembly_out, strainid = run_assemblypipe(args)
     else:
         raw_assembly_out=args.input
-        strainid = raw_assembly_out.split("/")[-1]
-        strainid = re.sub('.(fasta|fna|fa)', '', strainid)
+        if not args.strainid:
+            strainid = raw_assembly_out.split("/")[-1]
+            args.strainid = re.sub('.(fasta|fna|fa)', '', strainid)
 
-    query_genome, strainid, mgt1st, serotype = post_assembly_qc(strainid,raw_assembly_out,args)
+    query_genome, strainid, mgt1st, serotype = post_assembly_qc(args.strainid,raw_assembly_out,args)
 
-    genome_to_alleles(query_genome, strainid, args, mgt1st, serotype)
+    genome_to_alleles(query_genome, args.strainid, args, mgt1st, serotype)
 
 
 
@@ -521,8 +522,10 @@ def genome_to_alleles(query_genome, strain_name, args, mgt1st, serotype):
 
     outfile = outdir + "/" + strain_name + "_alleles.fasta"
 
-    tempdir = outdir + "/tmp"
-
+    if args.tmpdir:
+        tempdir = args.tmpdir + "/" + strain_name +"/"
+    else:
+        tempdir = outdir + "/tmp/"
     if os.path.exists(outdir):
         pass
     else:
@@ -546,7 +549,7 @@ def genome_to_alleles(query_genome, strain_name, args, mgt1st, serotype):
 
     # gets ref allele hits and blast hits against reference
     alleles_called_ref, ref_blast_hits, no_hits = ref_exact_blast(query_genome, ref_alleles_in, locus_allowed_size,
-                                                                  tempdir)
+                                                                  tempdir,args)
 
     print(no_hits)
     exacthits = len(alleles_called_ref.keys())
@@ -585,8 +588,12 @@ def genome_to_alleles(query_genome, strain_name, args, mgt1st, serotype):
 
     print("Allele calling completed in: {:2f}".format(elapsed_time))
 
+    if os.path.exists(tempdir):
+        shutil.rmtree(tempdir)
+
     now = datetime.datetime.now()
     timestamp = now.strftime("%H:%M:%S")
+
 
     print("[" + timestamp + "] MGT fastq to alleles pipeline complete for strain: " + strain_name)
 
@@ -602,7 +609,7 @@ def check_reconstructed_for_exact_matches(reconstructed,refseqs,alleles_called_r
                     newcalls.append(locus)
     return alleles_called_ref,newcalls
 
-def ref_exact_blast(query_genome, ref_fasta, allele_sizes, tempdir):
+def ref_exact_blast(query_genome, ref_fasta, allele_sizes, tempdir,args):
     """
     runs blast and extracts exact hits to existing alleles
     data structure of parsed blast results:
@@ -627,7 +634,7 @@ def ref_exact_blast(query_genome, ref_fasta, allele_sizes, tempdir):
 
     bident = int(args.blastident)
 
-    blast_hits = run_blast(query_genome, ref_fasta, 15, 1000000, bident, tempdir)
+    blast_hits = run_blast(query_genome, ref_fasta, 15, 1000000, bident, tempdir,args)
     exact_list = []
     exact_dict = {}
     for result in blast_hits:
@@ -649,7 +656,7 @@ def ref_exact_blast(query_genome, ref_fasta, allele_sizes, tempdir):
 
 
 
-def run_blast(query_seq, locus_db, wordsize, culling, pident, tempdir):
+def run_blast(query_seq, locus_db, wordsize, culling, pident, tempdir,args):
     """
 
     :param query_seq: query sequence - can be multiple fasta seqs
@@ -678,7 +685,7 @@ def run_blast(query_seq, locus_db, wordsize, culling, pident, tempdir):
         max_target_seqs=10000000,
         max_hsps=5,
         word_size=wordsize,
-        num_threads=cpus,
+        num_threads=args.threads,
         task="blastn",
         culling_limit=culling)
     # best_hit_score_edge = 0.01,
@@ -1907,6 +1914,8 @@ if __name__ == "__main__":
                         choices=["reads","genome"])
     parser.add_argument("--refalleles", help="File path to MGT reference allele file. By default sistr results will be used to determine which subfolder within the default folder",
                         default="/species_specific_files/")
+    parser.add_argument("--strainid", help="id for strain to use in output")
+    parser.add_argument("--tmpdir",help="temporary folder")
     parser.add_argument("-o","--outpath", help="Path to ouput file name,required=True",required=True)
     parser.add_argument("-s", "--species", help="String to find in kraken species confirmation test",
                         default="Salmonella enterica")

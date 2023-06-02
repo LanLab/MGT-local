@@ -1700,6 +1700,7 @@ def get_matches(level, connection, inquery, allowed_diffs, tablesdict, odc_level
 
         if args.timing:
             print("sql_query done", (" --- %s seconds ---" % (time.time() - start_time)))
+        ##TODO multithread regex
         stres = "\n".join(["\t".join(map(str,x)) for x in stres])
         stres = re.sub(r"_[0-9]+", "", stres)
         stres = re.sub(r"-", "", stres)

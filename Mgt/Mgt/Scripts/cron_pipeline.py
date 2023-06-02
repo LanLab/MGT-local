@@ -743,7 +743,7 @@ def run_reads_to_alleles(args,conn):
     id2user = {str(x[0]): str(x[3]) for x in res}
     projid2projname = {str(x[2]): str(x[4]) for x in res}
     if args.local:
-        lsofls = chunks(ids, 20000000000)
+        lsofls = chunks(ids, 200)
     else:
         lsofls = chunks(ids,200)
 
@@ -1026,6 +1026,8 @@ def runAllele2Db(args,conn,alleleslocation):
 
     if len(ids) > 100:
         if not args.local:
+            ids = ids[:100]
+        else:
             ids = ids[:100]
 
     alleles = list([x[1] for x in res if str(x[0]) in ids])

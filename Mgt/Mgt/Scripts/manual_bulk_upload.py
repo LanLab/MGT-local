@@ -219,12 +219,12 @@ def set_to_X(args, conn, X):
 
 def load_settings(args):
     if ".py" in args.settings:
-        folder = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
+        folder = path.dirname(path.dirname(path.abspath(__file__)))
         s = args.settings.split("/")[-1]
-        settingsfile = folder + "/Mgt/Mgt/" + s
+        settingsfile = folder + "/Mgt/" + s
     else:
-        folder = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
-        settingsfile = folder + "/Mgt/Mgt/settings_" + args.settings + ".py"
+        folder = path.dirname(path.dirname(path.abspath(__file__)))
+        settingsfile = folder + "/Mgt/settings_" + args.settings + ".py"
 
     if not path.exists(settingsfile):
         sys.exit("settings file not found at: {}".format(settingsfile))
@@ -232,12 +232,12 @@ def load_settings(args):
     settings = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(settings)
 
-    return settings
+    return settings,settingsfile
 
 
 def main():
     args = parseargs()
-    settings = load_settings(args)
+    settings,settingsfile = load_settings(args)
 
     uploads = settings.ABS_MEDIA_ROOT
 
@@ -259,7 +259,7 @@ def main():
     conn = psycopg2.connect(DbConString)
     conn.autocommit = True
 
-    addInfo(args.projectPath, args.projectName, args.appname, args.inmeta, args.settings)
+    addInfo(args.projectPath, args.projectName, args.appname, args.inmeta, settingsfile)
 
     if args.todownload:
         set_to_X(args, conn, "D")
