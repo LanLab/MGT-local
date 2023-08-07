@@ -1733,9 +1733,9 @@ def get_matches(level, connection, inquery, allowed_diffs, tablesdict, odc_level
                     for pos in range(pstart, pend):
                         #     try:
                         if newap[pos] != ex[pos]:
-                            if newap[pos] != '0' and ex[pos] != '0':
+                            if newap[pos] not in ['0',''] and ex[pos] not in ['0','']:
                                 missmatchno += [(newap[pos], ex[pos])]
-                        if newap[pos] == '0' or ex[pos] == '0':
+                        if newap[pos] in ['0',''] or ex[pos] in ['0','']:
                             zerocounts[appos] += 1
                         # if not out:
                         #     missmatchno+=[(newap[pos], ex[pos])]
