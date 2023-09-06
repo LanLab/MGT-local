@@ -20,8 +20,8 @@ dependencies:
   - pyparsing
   - pip
   - geopy
+  - sistr_cmd
   - pip:
-    - sistr_cmd
     - django-countries
     - django-registration
     - django-tables2
