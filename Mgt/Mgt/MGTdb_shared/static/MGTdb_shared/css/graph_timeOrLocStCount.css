@@ -1,0 +1,36 @@
+
+
+#plot_timeStCount {
+  height: 800px;
+  overflow-y: auto;
+  width: 100%;
+  overflow-x: auto;
+}
+
+#g2_plot_timeLocStCnt {
+  height: 800px;
+  overflow-y: auto;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.smMonospace {
+  font-family: monospace;
+  font-size: 10px;
+}
+
+/* 
+#svgLegend_timeStCount {
+  overflow-y: scroll;
+  overflow-x: scroll;
+  width: 100%;
+}
+
+
+#legend_timeStCount {
+  overflow-x: scroll;
+  overflow-y: scroll;
+  width: 100%;
+  height: 100px;
+}
+*/ 

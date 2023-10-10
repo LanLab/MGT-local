@@ -1,0 +1,100 @@
+{% extends 'Templates/base.html' %}
+
+{% block head_static %}
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'MGTdb_shared/css/isolateCreateEdit.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'MGTdb_shared/css/isolateCreateEdit.css' %}">
+
+<script src="{% static 'MGTdb_shared/javascript/dropzone.js' %}"></script>
+
+{% endblock %}
+
+{% block title_local %}
+Upload multiple isolates
+{% endblock %}
+
+{% block body_local %}
+<div class="container-fluid">
+	<br>
+	<h2 class="speHeading"> Upload multiple isolates </h2>
+	<br>
+
+
+	<div class="container-fluid">
+
+		<h4 class="speHeading"> Step 1. Download template </h4>
+
+		<p> Download <a href="{% static 'MGTdb_shared/forDownload/IsolateMetadataTemplate.csv' %}" target="_blank">this CSV template</a>, and specify <a href="{% url organism|stringformat:'s:instruction_bulkUpload' %}" target="_blank">metadata and corresponding allele filenames</a> for any number of isolates.</p>
+		<br>
+
+		<p>The instructions to <i>generate allele files locally</i> can be found <a href="https://mgt-docs.readthedocs.io/en/latest/local_allele_calling.html#local-allele-calling" target="_blank">here</a>.</p> 
+
+		<br>
+		<br>
+		<h4 class="speHeading"> Step 2. Upload metadata file </h4>
+
+		{% for error in form_iso.non_field_errors %}
+		   <div class="alert alert-danger">
+			   <strong>{{ error|escape }}</strong>
+		   </div>
+	   {% endfor %}
+
+		<form action="" method="post" enctype="multipart/form-data">
+			{% csrf_token %}
+
+			<table>
+				{{ form_iso.as_table }}
+			</table>
+
+			<input type="submit" value="Upload" class="btn btn-default-spe">
+		</form>
+
+
+
+		<br>
+		{% if notAddedIsolates %}
+			<div>
+				<i> The following isolates were not added</i>:
+				<table class="table table-bordered table-sm">
+					{% for k, val in notAddedIsolates.items %}
+						<tr>
+							<td>
+								{{ k }}
+							</td>
+							<td class="errorlist">
+								{{ val }}
+							</td>
+						</tr>
+					{% endfor %}
+				</table>
+			</div>
+		{% endif %}
+
+
+		<br>
+		<br>
+
+
+
+		{% if request.GET.project %}
+		<div>
+
+			<h4 class="speHeading"> Step 3. Upload alleles files </h4>
+
+			To upload the alleles files for isolates in project '{{ project.identifier }}', then click below. <br>
+
+			<a class="btn btn-default-spe" href="{% url organism|stringformat:'s:isolate_create_bulk_al' request.GET.project %}"> Upload allele files </a>
+
+		</div>
+		{% endif %}
+
+
+		<br>
+		<br>
+
+	</div>
+
+</div>
+
+
+{% endblock %}

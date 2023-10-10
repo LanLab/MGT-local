@@ -21,7 +21,11 @@ Home
 	<div class="container contiainer-fluid">
 		<h2 class="h2 heading2"> Current database statistics: </h2>
 		<br>
+		{% comment %} <p>stats: {{ stats }}</p> {% endcomment %}
+
 		{% for appName, dict_vals in stats.items %}
+			{% comment %} <p>appName: {{ appName }} </p>
+			<p>dict_vals: {{ dict_vals}}</p> {% endcomment %}
 		{% if appName != 'ShigEiFinder' %}
 		<div class="card">
 				{# { appName } #}
@@ -75,9 +79,9 @@ Home
 
 
 		</div>
-		{% endif %}
+		{% endif %} 
 		<br>
-		{% endfor %}
+		{% endfor %} 
 	</div>
 
 

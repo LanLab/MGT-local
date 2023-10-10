@@ -1,0 +1,85 @@
+.navBarSecond{
+	background-color: #613597; /* #522d80; purple. */
+}
+
+.navSecond{
+	color: beige;
+}
+
+.navSecond.active{
+	background-color: #7851a9 !important;
+	color: white !important;
+}
+
+.navSecond.nav-link:hover{
+	color:white !important;
+}
+
+.btn-default-spe {
+	background-color: #613597;
+	color:beige;
+	border-color: #5a2b94;
+}
+
+.btn-default-spe:hover {
+	background-color: #7851a9;
+	color:white;
+	border-color: #7851a9;
+}
+
+.btn-default-outline-spe {
+	border-color:  #613597;
+}
+
+.btn-default-outline-spe:hover {
+	background-color: #7851a9;
+	color:white;
+	border-color: #7851a9;
+}
+
+button[disabled]:hover {
+    background: beige;
+	color: #585858;
+}
+
+.bdr-default{
+	border-color: #613597 !important;
+	border-style: solid;
+	border-width: thin;
+}
+
+.speHeading{
+	color: #613597;
+}
+
+.speLinkOpp {
+	color: #613597;
+}
+
+.speLinkOpp:hover {
+	color: #613597;
+	text-decoration: underline;
+}
+
+.error {
+	color: #8b0000; 
+}
+
+
+.speLink {
+	color: #613597;
+	text-decoration: underline;
+}
+.speLink:hover {
+	color: #613597;
+}
+
+.btn-spe-edit{
+	color: beige;
+	background: #f5a742;
+}
+
+.btn-spe-delete{
+	color: beige;
+	background: #fa003e;
+}

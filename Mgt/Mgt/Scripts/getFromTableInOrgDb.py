@@ -99,7 +99,6 @@ def getCcTnsForScheme(appClass, schObj):
 
 def getCcTnForScheme(appClass, schName, tableNum, displayOrd):
 	qs_tn = None
-
 	try:
 		qs_tn = appClass.models.Tables_cc.objects.filter(scheme=schName, display_table=tableNum, display_order=displayOrd).get()
 		return qs_tn

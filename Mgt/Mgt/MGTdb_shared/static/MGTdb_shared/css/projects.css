@@ -1,0 +1,12 @@
+.errorlist{
+    color: #980000;
+}
+
+.error input, .error select {
+border: 2px #980000 solid;
+}
+
+
+.help-block{color:#980000;
+            font-weight:bold;
+}

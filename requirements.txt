@@ -1,0 +1,11 @@
+Django==4.1.7
+django-countries
+django-registration
+django-tables2
+djangorestframework
+django-extensions
+geopandas
+geopy
+regex
+requests
+pyscopg2-binary

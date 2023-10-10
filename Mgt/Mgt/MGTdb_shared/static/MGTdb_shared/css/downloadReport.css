@@ -1,0 +1,10 @@
+.errorlist{
+	color: #990000;
+}
+
+#chart1 #chart1_svg #chart2 #chart2_svg #chart_mgtLvl{
+	height: 400px;
+	/* overflow-y: auto; */
+	width: 100%;
+	/* overflow-x: auto; */
+}

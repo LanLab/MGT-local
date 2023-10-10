@@ -183,9 +183,13 @@ def make_ref_allele_files(args,inp):
     if not path.exists(outrefalleles):
         os.makedirs(outrefalleles)
     inref = SeqIO.to_dict(SeqIO.parse(args.refgenome, "fasta"))
+    # print(inref)
+    # print(args.refgenome)
 
     keyorder = sorted(list(inref.keys()))
     chromdict = {str(keyorder.index(x)+1):x for x in keyorder}
+    print('keyorder: ', keyorder)
+    print('chromdict: ', chromdict)
     allalleles = []
     for line in inp:
         col = line.split("\t")
@@ -194,9 +198,12 @@ def make_ref_allele_files(args,inp):
         en = int(col[2])
         orient = col[3]
         chrom = col[4]
-        if chrom not in chromdict:
-            sys.exit(f"Please ensure that the number of chromosones specified in {args.allele_locations} is correct")
+        # print('chrom: ', type(chrom))
+        if chrom not in chromdict.keys():
+            # print(chrom, chromdict.keys())
+            sys.exit(f"ERROR: Please ensure that the number of chromosomes specified in {args.allele_locations} is correct")
         else:
+            # print('this is: ', chrom)
             chromid =  chromdict[chrom]
             if en <= len(inref[chromid].seq):
                 alleleseq = inref[chromid].seq[st-1:en]
@@ -206,10 +213,14 @@ def make_ref_allele_files(args,inp):
                 SeqIO.write(outallele,outrefalleles+"/"+loc+".fasta","fasta")
                 allalleles.append(outallele)
             else:
-                sys.exit(f"please ensure that chromosome number in {args.allele_locations} corresponds to the alphabetical order of chromosome fasta headers")
+                print('en: ', en)
+                print('inref: ', len(inref[chromid].seq))
+                sys.exit(f"ERROR: please ensure that chromosome number in {args.allele_locations} corresponds to the alphabetical order of chromosome fasta headers")
 
     outfolder = f"{args.allref}/{args.appname}"
     outpath = f"{outfolder}_intact_alleles.fasta"
+    print('outfolder:', outfolder)
+    print('outpath: ', outpath)
     if not path.exists(outfolder):
         os.makedirs(outfolder)
     SeqIO.write(allalleles,outpath,"fasta")
@@ -242,6 +253,7 @@ def make_schemesInfo(args,locils):
     apfolder = args.temp + "/AllelicProfiles/"
     schemes = []
     for i in range(min,args.schemeno):
+        print('range', range(min,args.schemeno))
         schemeno = i+1
         schemeaccfile = f'{args.schemeaccessions}/MGT{schemeno}_gene_accessions.txt'
         if not path.exists(schemeaccfile):
@@ -378,6 +390,7 @@ def make_isolateandmgt(args,schemes):
     outf = open(args.temp + "/mgt_annotations.tab", "w")
     outf.write(outmgt)
     outf.close()
+    print('isolate and mgts created')
 
 def load_settings(args):
     if ".py" in args.settings:
