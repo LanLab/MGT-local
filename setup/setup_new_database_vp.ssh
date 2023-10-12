@@ -1,55 +1,58 @@
-#!/bin/sh
+#!/bin/bash
 
 #CHANGE below to select where conda is initialised on your system
 # source ~/.bash_profile
-#source ~/.zshrc
-# source ~/.bashrc
+# source ~/.zshrc
+source ~/.bashrc
 
+cd ../Mgt/Mgt/Mgt/
 
-#CHANGE species name to be used for database, should match kraken result for contamination checking
-db_name='blankdb2'
-appname='Blankdb2'
-dbuser='blankuser'
+SETTINGS="settings_vp"
 
 #CHANGE species name to be used for database, should match kraken result for contamination checking
-species='Blankus Databasus'
+export db_name="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['db_name'])")"
+export appname="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['app_name'])")"
+export dbuser="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['db_user'])")"
+
+#CHANGE species name to be used for database, should match kraken result for contamination checking
+export species="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['species'])")"
 
 #CHANGE location for setup files to be stored for use later in the script
-ref_files="tmp_setup_files/"
+export ref_files="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['ref_files'])")"
 
 #CHANGE full path to modified settings file
-settingfile="/home/vandana/MGT-local/Mgt/Mgt/Mgt/settings_vp.py"
+export settingfile="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['settingfile'])")"
 
 #CHANGE full path to reference genome
-ref_genome="/home/vandana/MGT-local/setup/example_inputs/genome.fasta"
+export ref_genome="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['ref_genome'])")"
 
 #CHANGE full path to lociLocationsInRef file
-lociloc="/home/vandana/MGT-local/setup/example_inputs/lociLocationsInRef.txt"
+export lociloc="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['lociloc'])")"
 
 #CHANGE full path to lociLocationsInRef file
-scheme_accessions="/home/vandana/MGT-local/setup/example_inputs/Schemes"
+export scheme_accessions="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['scheme_accessions'])")"
 
 #CHANGE full path to top folder of MGT repo
-path_mgt="/home/vandana/MGT-local/"
+export path_mgt="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['path_mgt'])")"
 
 #CHANGE abbreviated settings file name
-settings_prefix="Mgt.settings_vp"
+export settings_prefix="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['settings_prefix'])")"
 
 #CHANGE location to store single file of reference alleles
-refallalleles="species_specific_alleles/"
+export refalleles="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['refalleles'])")"
 
 #CHANGE name of conda environment
-condaenv="mgtenv"
+export condaenv="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['condaenv'])")"
 
 #CHANGE number of levels in MGT scheme
-schemeno=3
+export schemeno="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['schemeno'])")"
 
 #CHANGE number and cutoff of ODCs generated from largest scheme
-odcls="1,2,5,10"
+export odcls="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['odcls'])")"
 
 #CHANGE login details of initial user
-superusername="blankblank"
-superuseremail="blank@blank.blank"
+export superusername="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['superusername'])")"
+export superuseremail=""$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['superuseremail'])")""
 
 ################################# EDIT ABOVE THIS LINE ONLY  ###############################################################
 
@@ -62,7 +65,9 @@ sleep 2
 
 cd ${path_mgt}
 
-. ../miniconda3/etc/profile.d/conda.sh
+eval "$(conda shell.bash hook)"
+
+# . ../miniconda3/etc/profile.d/conda.sh
 
 conda activate ${condaenv};
 
@@ -83,7 +88,7 @@ echo PAUSE
 
 cd $mgt_home"Scripts"
 
-python make_setup_files.py -r $ref_genome -a $appname -d $db_name -s "$species" -t $ref_files --allref $refallalleles --allele_locations $lociloc --schemeno $schemeno --schemeaccessions $scheme_accessions --mgt1is7gene --odcls $odcls --settings $settingfile
+python make_setup_files.py -r $ref_genome -a $appname -d $db_name -s "$species" -t $ref_files --allref $refalleles --allele_locations $lociloc --schemeno $schemeno --schemeaccessions $scheme_accessions --mgt1is7gene --odcls $odcls --settings $settingfile
 
 echo "made setup files"
 
@@ -185,6 +190,3 @@ python manage.py migrate --settings $settings_prefix --database=$db_name
 sleep 1
 
 echo "finished"
-
-python manage.py collectstatic --settings $settings_prefix
-# python manage.py runserver --settings $settings_prefix

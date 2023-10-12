@@ -30,23 +30,6 @@ DEBUG = True
 # For example: 'DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]'
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', '0.0.0.0', '[::1]', '*']
 
-# SECRET_KEY = os.environ.get("SECRET_KEY")
-
-# DEBUG = bool(os.environ.get("DEBUG", default=0))
-
-# # 'DJANGO_ALLOWED_HOSTS' should be a single string of hosts with a space between each.
-# # For example: 'DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]'
-# ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
-
-
-# # SECURITY WARNING: keep the secret key used in production secret!
-# SECRET_KEY = 'exo8nsf7fx&e@vs=#^-5)#$c%o^@8sm$$fu&3*%=g475o--ej_' #CHANGE add random string
-
-# # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
-
-# ALLOWED_HOSTS = ['0.0.0.0', 'localhost', '127.0.0.1', '[::1]', '*']
-
 INSTALLED_APPS = [
     'django_tables2',
     'Home',
@@ -246,3 +229,23 @@ STATIC_URL = '/static/'
 STATIC_ROOT = 'Static/'
 
 RAWQUERIES_DISPLAY = {'Blankdb2': '', }
+
+SETUP_DB = {
+    'db_name': 'blankdb2', # unique 
+    'app_name': 'Blankdb2', # unique 
+    'db_user': 'blankuser', # same 
+    'species': 'Blankus Databasus', # unique 
+    'ref_files':"tmp_setup_files/", # unique? 
+    'settingfile':"/home/vandana/MGT-local/Mgt/Mgt/Mgt/settings_vp.py", # same 
+    'ref_genome':"/home/vandana/MGT-local/setup/example_inputs/genome.fasta", # unique 
+    'lociloc':"/home/vandana/MGT-local/setup/example_inputs/lociLocationsInRef.txt", # unique
+    'scheme_accessions':"/home/vandana/MGT-local/setup/example_inputs/Schemes", # unique 
+    'path_mgt':"/home/vandana/MGT-local/", # same 
+    'settings_prefix':"Mgt.settings_vp", # same 
+    'refalleles':"species_specific_alleles/", # same 
+    'condaenv':"mgtenv", # same 
+    'schemeno':3, # unique 
+    'odcls':"1,2,5,10", # unique 
+    'superusername':"blankblank", # same 
+    'superuseremail':"blank@blank.blank" # same 
+}
