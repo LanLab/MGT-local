@@ -31,9 +31,9 @@ DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', '0.0.0.0', '[::1]', '*']
 
 INSTALLED_APPS = [
+	'Blankdb2',
     'django_tables2',
     'Home',
-    'Blankdb2',
     'MGTdb_shared',
     'django.contrib.auth',
     'django.contrib.admin',
@@ -98,7 +98,7 @@ FILE_UPLOAD_DIRECTORY_PERMISSIONS=0o774
 NCBI_RETRIEVAL_FREQUENCY = {'Blankdb2': None, } # CHANGE
 
 DATABASE_ROUTERS = ['Mgt.router.GenericRouter']
-APPS_DATABASE_MAPPING = { 'Blankdb2': 'blankdb2', } #CHANGE change to appname in INSTALLED_APPS and database DATABASES in name normally upper and lowercase first letter i.e. Salmonella and salmonella
+APPS_DATABASE_MAPPING = { 'Blankdb2': 'blankdb2',  } #CHANGE change to appname in INSTALLED_APPS and database DATABASES in name normally upper and lowercase first letter i.e. Salmonella and salmonella
 
 DATABASES = {
     'default': {
@@ -125,6 +125,14 @@ DATABASES = {
         "PORT": "5432",
         'NAME': 'blankdb2',
     },
+    # 'blankdb3': {
+    #     "ENGINE": "django.db.backends.postgresql",
+    #     "USER": 'blankuser',
+    #     "PASSWORD": 'blankpassword',
+    #     "HOST": "0.0.0.0",
+    #     "PORT": "5432",
+    #     'NAME': 'blankdb3',
+    # },
 }
 
 NONLOCALHOST='0.0.0.0' # leave as 0.0.0.0 for local install
@@ -230,22 +238,36 @@ STATIC_ROOT = 'Static/'
 
 RAWQUERIES_DISPLAY = {'Blankdb2': '', }
 
+DB_USER='blankuser'
+SETTING_FILE="/home/vandana/MGT-local/Mgt/Mgt/Mgt/settings_vp.py"
+PATH_MGT="/home/vandana/MGT-local/"
+SETTINGS_PREFIX="Mgt.settings_vp"
+REFALLELES="species_specific_alleles/"
+REF_FILES="tmp_setup_files/"
+CONDAENV="mgtenv"
+SUPERUSERNAME="blankblank"
+SUPERUSEREMAIL="blank@blank.blank"
+
+
 SETUP_DB = {
-    'db_name': 'blankdb2', # unique 
-    'app_name': 'Blankdb2', # unique 
-    'db_user': 'blankuser', # same 
-    'species': 'Blankus Databasus', # unique 
-    'ref_files':"tmp_setup_files/", # unique? 
-    'settingfile':"/home/vandana/MGT-local/Mgt/Mgt/Mgt/settings_vp.py", # same 
-    'ref_genome':"/home/vandana/MGT-local/setup/example_inputs/genome.fasta", # unique 
-    'lociloc':"/home/vandana/MGT-local/setup/example_inputs/lociLocationsInRef.txt", # unique
-    'scheme_accessions':"/home/vandana/MGT-local/setup/example_inputs/Schemes", # unique 
-    'path_mgt':"/home/vandana/MGT-local/", # same 
-    'settings_prefix':"Mgt.settings_vp", # same 
-    'refalleles':"species_specific_alleles/", # same 
-    'condaenv':"mgtenv", # same 
-    'schemeno':3, # unique 
-    'odcls':"1,2,5,10", # unique 
-    'superusername':"blankblank", # same 
-    'superuseremail':"blank@blank.blank" # same 
+    'Blankdb2': {
+        'db_name': 'blankdb2', # unique 
+        'app_name': 'Blankdb2', # unique 
+        'species': 'Blankus Databasus', # unique 
+        'ref_genome':"/home/vandana/MGT-local/setup/example_inputs/genome.fasta", # unique 
+        'lociloc':"/home/vandana/MGT-local/setup/example_inputs/lociLocationsInRef.txt", # unique
+        'scheme_accessions':"/home/vandana/MGT-local/setup/example_inputs/Schemes", # unique 
+        'schemeno':3, # unique 
+        'odcls':"1,2,5,10", # unique 
+    }, 
+    # 'Blankdb3': {
+    #     'db_name': 'blankdb3', # unique 
+    #     'app_name': 'Blankdb3', # unique 
+    #     'species': 'Blank but also a Database', # unique 
+    #     'ref_genome':"/home/vandana/MGT-local/setup/example_inputs_2/genome.fasta", # unique 
+    #     'lociloc':"/home/vandana/MGT-local/setup/example_inputs_2/lociLocationsInRef.txt", # unique
+    #     'scheme_accessions':"/home/vandana/MGT-local/setup/example_inputs_2/Schemes", # unique 
+    #     'schemeno':3, # unique 
+    #     'odcls':"1,2,5,10", # unique 
+    # }
 }
