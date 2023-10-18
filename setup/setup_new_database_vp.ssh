@@ -5,11 +5,13 @@
 # source ~/.zshrc
 source ~/.bashrc
 
-cd ../Mgt/Mgt/Mgt/
+cd ../Mgt/Mgt/
 
-SETTINGS="settings_vp"
+SETTINGS=Mgt.settings_vp
 
 export APPS_DATABASE_MAPPING="$(python -c "from $SETTINGS import APPS_DATABASE_MAPPING; print('|'.join(APPS_DATABASE_MAPPING))")"
+
+echo $APPS_DATABASE_MAPPING
 
 IFS='|'
 
@@ -17,7 +19,10 @@ read -ra arr <<< "$APPS_DATABASE_MAPPING"
 
 for val in "${arr[@]}"; do
     echo "Setting up DB for: $val"
-    sed -i "/^INSTALLED_APPS/ s/\[/&\n\t'$val',/" settings_vp.py
+    #CHANGE full path to modified settings file
+    export settingfile="$(python -c "from $SETTINGS import SETTING_FILE; print(SETTING_FILE)")"
+
+    sed -i "/^INSTALLED_APPS/ s/\[/&\n\t'$val',/" $settingfile
 
     #CHANGE species name to be used for database, should match kraken result for contamination checking
     export db_name="$(python -c "from $SETTINGS import APPS_DATABASE_MAPPING; print(APPS_DATABASE_MAPPING['$val'])")"
@@ -29,9 +34,6 @@ for val in "${arr[@]}"; do
 
     #CHANGE location for setup files to be stored for use later in the script
     export ref_files="$(python -c "from $SETTINGS import REF_FILES; print(REF_FILES['$val'])")"
-
-    #CHANGE full path to modified settings file
-    export settingfile="$(python -c "from $SETTINGS import SETTING_FILE; print(SETTING_FILE)")"
 
     #CHANGE full path to reference genome
     export ref_genome="$(python -c "from $SETTINGS import REF_GENOME; print(REF_GENOME['$val'])")"
@@ -210,11 +212,9 @@ for val in "${arr[@]}"; do
     echo "Set up for DB $val is finished"
 
     echo $(pwd)
-    cd Mgt
-    echo $(pwd)
+    # cd Mgt
+    # echo $(pwd)
 
 done
-
-cd ..
 
 python manage.py migrate --settings $settings_prefix 

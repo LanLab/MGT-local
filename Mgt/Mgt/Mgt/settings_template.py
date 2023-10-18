@@ -32,7 +32,7 @@ ALLOWED_HOSTS = ['0.0.0.0', 'localhost', '127.0.0.1', '[::1]', '*']
 INSTALLED_APPS = [
     'django_tables2',
     'Home',
-    'Blankdb', #change this to new database app name (normally capitalised first letter)
+    'MGTdb_shared',
     'django.contrib.auth',
     'django.contrib.admin',
     'django.contrib.contenttypes',
@@ -73,6 +73,14 @@ TEMPLATES = [
     },
 ]
 
+TEMPLATE_DEBUG = True
+
+TEMPLATE_LOADERS = (
+    'django.template.loaders.app_directories.load_template_source',
+)
+
+MANAGEMENT_COMMANDS = ['Mgt.management.commands.show_urls']
+
 # MY_URL = "http://mgtdb.unsw.edu.au"
 MY_URL = "http://127.0.0.1:8000"
 WSGI_APPLICATION = 'Mgt.wsgi.application'
@@ -84,7 +92,7 @@ FILE_UPLOAD_DIRECTORY_PERMISSIONS=0o774
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
 # 2018, Jan 9 - require a db router (if multiple databases)
-NCBI_RETRIEVAL_FREQUENCY = {'Blankdb': None} # CHANGE
+NCBI_RETRIEVAL_FREQUENCY = {'Blankdb': None } # CHANGE
 
 DATABASE_ROUTERS = ['Mgt.router.GenericRouter']
 APPS_DATABASE_MAPPING = {'Blankdb': 'blankdb'} #CHANGE change to appname in INSTALLED_APPS and database DATABASES in name normally upper and lowercase first letter i.e. Salmonella and salmonella
@@ -105,7 +113,15 @@ DATABASES = {
         'USER': 'blankuser', #CHANGE add postgres user
         'PASSWORD': 'blankpassword', #CHANGE add postgres password
         'NAME': 'blankdb',#CHANGE to new database name
-    }
+    }, 
+    # 'blankdb2': { #CHANGE postgres database name
+    #     'ENGINE': 'django.db.backends.postgresql',
+    #     'HOST': '0.0.0.0',
+    #     'PORT': '5432',
+    #     'USER': 'blankuser', #CHANGE add postgres user
+    #     'PASSWORD': 'blankpassword', #CHANGE add postgres password
+    #     'NAME': 'blankb2',#CHANGE to new database name
+    # }
 }
 
 NONLOCALHOST='0.0.0.0' # leave as 0.0.0.0 for local install
@@ -142,19 +158,19 @@ LOGIN_REDIRECT_URL = '/'
 
 
 #RELATIVE PATHS FROM folder containing manage.py in this repo to folder on your system
-SUBDIR_REFERENCES = './../../../../References/' #CHANGE location where reference genomes will be stored
-SUBDIR_ALLELES = './../../../../Alleles/' #CHANGE location where allele sequences for the database will be stored
-MEDIA_ROOT = './../../../../Uploads/'#CHANGE location where uploaded reads/allele files will be stored
-BLASTALLELES='./../../../../species_specific_alleles/'#CHANGE location where initial allele sequences will be stored for read2allele
+SUBDIR_REFERENCES = './References/' #CHANGE location where reference genomes will be stored
+SUBDIR_ALLELES = './Alleles/' #CHANGE location where allele sequences for the database will be stored
+MEDIA_ROOT = './Uploads/'#CHANGE location where uploaded reads/allele files will be stored
+BLASTALLELES='./species_specific_alleles/'#CHANGE location where initial allele sequences will be stored for read2allele
 
 # ABSOLUTE PATH VERSIONS OF ABOVE
-ABS_SUBDIR_REFERENCES = '/path/to/References/' #CHANGE location where reference genomes will be stored
-ABS_SUBDIR_ALLELES = '/path/to/Alleles/' #CHANGE location where allele sequences for the database will be stored
-ABS_MEDIA_ROOT = "/path/to/Uploads/" #CHANGE location where uploaded reads/allele files will be stored
-ABS_BLASTALLELES='/path/to/species_specific_alleles/'#CHANGE location where initial allele sequences will be stored for read2allele
+ABS_SUBDIR_REFERENCES = 'References/' #CHANGE location where reference genomes will be stored
+ABS_SUBDIR_ALLELES = 'Alleles/' #CHANGE location where allele sequences for the database will be stored
+ABS_MEDIA_ROOT = "Uploads/" #CHANGE location where uploaded reads/allele files will be stored
+ABS_BLASTALLELES='species_specific_alleles/'#CHANGE location where initial allele sequences will be stored for read2allele
 
-FILES_FOR_DOWNLOAD = "/Path/to/folder/files_for_download"#CHANGE replace path with storage location of allele and profile collections
-TMPFOLDER = "/Path/to/folder/tmp_files/"#CHANGE replace path with tmp specified in setup script
+FILES_FOR_DOWNLOAD = "files_for_download/"#CHANGE replace path with storage location of allele and profile collections
+TMPFOLDER = "tmp_files/"#CHANGE replace path with tmp specified in setup script
 
 ASCPKEY = "/Path/to/.aspera/connect/etc/asperaweb_id_dsa.openssh"#CHANGE ONLY NEEDED IF RUNNING cron_pipeline --dl_reads
 
@@ -199,8 +215,34 @@ USE_TZ = True
 
 DATE_FORMAT = 'Y-m-d'
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.11/howto/static-files/
-
 STATIC_URL = '/static/'
 STATIC_ROOT = 'Static/'
+
+RAWQUERIES_DISPLAY = {'Blankdb': '', } # CHANGE to extra columns in isolateList table or '' for default columns. 
+
+SPECIES = { 'Blankdb': '<i> Blankus Databasus </i>', } # CHANGE 
+
+REF_GENOME = { 'Blankdb': 'path/to/blankdb_ref_genome', } #CHANGE 
+
+LOCI_LOC = { 'Blankdb': 'path/to/blankdb_locilocs', } #CHANGE 
+
+SCHEME_ACCESSIONS = {'Blankdb': 'path/to/blankdb_scheme_accessions' } #CHANGE 
+
+SCHEME_NO = {'Blankdb': 3 } # CHANGE  
+
+ODCLS = { 'Blankdb': "1,2,5,10", } #CHANGE 
+
+REF_FILES = {'Blankdb': 'path/to/blankdb_ref_files'}
+
+DB_USER='postgres' # CHANGE
+SETTING_FILE="path/to/setting_file" #CHANGE
+PATH_MGT="path/to/mgt-local/" #CHANGE
+SETTINGS_PREFIX="Mgt.settings_template" #CHANGE 
+REFALLELES="path/to/species_specific_alleles/" #CHANGE 
+CONDAENV="mgtenv" #CHANGE 
+SUPERUSERNAME="superusername" # CHANGE 
+SUPERUSEREMAIL="superusername@ref.ref" #CHANGE 
+
+
+
+
