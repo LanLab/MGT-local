@@ -31,8 +31,6 @@ DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', '0.0.0.0', '[::1]', '*']
 
 INSTALLED_APPS = [
-	'Charger',
-	'Clawclip',
     'django_tables2',
     'Home',
     'MGTdb_shared',
@@ -239,38 +237,49 @@ STATIC_ROOT = 'Static/'
 
 RAWQUERIES_DISPLAY = {'Clawclip': '', 'Charger': ''}
 
+SPECIES = {
+    'Clawclip': '<i> Cute Beige Claw Clip </i>', 
+    'Charger': '<i> Dell Laptop Charger </i>' 
+}
+
+REF_GENOME = {
+    'Clawclip': '/home/vandana/MGT-local/setup/example_inputs_2/genome.fasta', 
+    'Charger': '/home/vandana/MGT-local/setup/example_inputs/genome.fasta'
+}
+
+LOCI_LOC = {
+    'Clawclip': '/home/vandana/MGT-local/setup/example_inputs_2/lociLocationsInRef.txt', 
+    'Charger': '/home/vandana/MGT-local/setup/example_inputs/lociLocationsInRef.txt'
+}
+
+SCHEME_ACCESSIONS = {
+    'Clawclip': '/home/vandana/MGT-local/setup/example_inputs_2/Schemes', 
+    'Charger': '/home/vandana/MGT-local/setup/example_inputs/Schemes',
+}
+
+SCHEME_NO = { 
+    'Clawclip': 3, 
+    'Charger': 3             
+}
+
+ODCLS = { 
+    'Clawclip': "1,2,5,10", 
+    'Charger': "1,2,5,10"
+}
+
+REF_FILES = { 
+    'Clawclip': 'tmp_setup_files/Clawclip/', 
+    'Charger': 'tmp_setup_files/Charger/'
+    # 'Clawclip': "1,2,5,10", 
+    # 'Charger': "1,2,5,10"
+
+}
+
 DB_USER='blankuser'
 SETTING_FILE="/home/vandana/MGT-local/Mgt/Mgt/Mgt/settings_vp.py"
 PATH_MGT="/home/vandana/MGT-local/"
 SETTINGS_PREFIX="Mgt.settings_vp"
 REFALLELES="species_specific_alleles/"
-REF_FILES="tmp_setup_files/"
 CONDAENV="mgtenv"
-SUPERUSERNAME="blankblank1"
-SUPERUSEREMAIL="blank1@blank1.blank1"
-
-
-SETUP_DB = {
-    'Charger': {
-        # 'db_name': 'charger', # ALREADY IN PAGE  
-        # 'app_name': 'Charger', # ALREADY IN PAGE  
-        'species': '<i> Dell Laptop Charger </i>', # unique 
-        'ref_genome':"/home/vandana/MGT-local/setup/example_inputs/genome.fasta", # unique 
-        'lociloc':"/home/vandana/MGT-local/setup/example_inputs/lociLocationsInRef.txt", # unique
-        'scheme_accessions':"/home/vandana/MGT-local/setup/example_inputs/Schemes", # unique 
-        'schemeno':3, # unique 
-        'odcls':"1,2,5,10", # unique 
-        'ref_files': 'tmp_setup_files/Charger/'
-    }, 
-    'Clawclip': {
-        # 'db_name': 'clawclip', # ALREADY IN PAGE  
-        # 'app_name': 'Clawclip', # ALREADY IN PAGE 
-        'species': '<i> Cute Beige Claw Clip </i>', # unique 
-        'ref_genome':"/home/vandana/MGT-local/setup/example_inputs_2/genome.fasta", # unique 
-        'lociloc':"/home/vandana/MGT-local/setup/example_inputs_2/lociLocationsInRef.txt", # unique
-        'scheme_accessions':"/home/vandana/MGT-local/setup/example_inputs_2/Schemes", # unique 
-        'schemeno':3, # unique 
-        'odcls':"1,2,5,10", # unique 
-        'ref_files': 'tmp_setup_files/Clawclip/'
-    }
-}
+SUPERUSERNAME="blank2blank2"
+SUPERUSEREMAIL="blank2@blank2.blank2"

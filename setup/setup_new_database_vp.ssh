@@ -25,22 +25,22 @@ for val in "${arr[@]}"; do
     export dbuser="$(python -c "from $SETTINGS import DB_USER; print(DB_USER)")"
 
     #CHANGE species name to be used for database, should match kraken result for contamination checking
-    export species="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['$val']['species'])")"
+    export species="$(python -c "from $SETTINGS import SPECIES; print(SPECIES['$val'])")"
 
     #CHANGE location for setup files to be stored for use later in the script
-    export ref_files="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['$val']['ref_files'])")"
+    export ref_files="$(python -c "from $SETTINGS import REF_FILES; print(REF_FILES['$val'])")"
 
     #CHANGE full path to modified settings file
     export settingfile="$(python -c "from $SETTINGS import SETTING_FILE; print(SETTING_FILE)")"
 
     #CHANGE full path to reference genome
-    export ref_genome="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['$val']['ref_genome'])")"
+    export ref_genome="$(python -c "from $SETTINGS import REF_GENOME; print(REF_GENOME['$val'])")"
 
     #CHANGE full path to lociLocationsInRef file
-    export lociloc="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['$val']['lociloc'])")"
+    export lociloc="$(python -c "from $SETTINGS import LOCI_LOC; print(LOCI_LOC['$val'])")"
 
     #CHANGE full path to lociLocationsInRef file
-    export scheme_accessions="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['$val']['scheme_accessions'])")"
+    export scheme_accessions="$(python -c "from $SETTINGS import SCHEME_ACCESSIONS; print(SCHEME_ACCESSIONS['$val'])")"
 
     #CHANGE full path to top folder of MGT repo
     export path_mgt="$(python -c "from $SETTINGS import PATH_MGT; print(PATH_MGT)")"
@@ -55,10 +55,10 @@ for val in "${arr[@]}"; do
     export condaenv="$(python -c "from $SETTINGS import CONDAENV; print(CONDAENV)")"
 
     #CHANGE number of levels in MGT scheme
-    export schemeno="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['$val']['schemeno'])")"
+    export schemeno="$(python -c "from $SETTINGS import SCHEME_NO; print(SCHEME_NO['$val'])")"
 
     #CHANGE number and cutoff of ODCs generated from largest scheme
-    export odcls="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['$val']['odcls'])")"
+    export odcls="$(python -c "from $SETTINGS import ODCLS; print(ODCLS['$val'])")"
 
     #CHANGE login details of initial user
     export superusername="$(python -c "from $SETTINGS import SUPERUSERNAME; print(SUPERUSERNAME)")"
@@ -167,10 +167,13 @@ for val in "${arr[@]}"; do
     python manage.py makemigrations --settings $settings_prefix $appname
     python manage.py migrate --settings $settings_prefix --database=$db_name
 
-
-    #currently only Ref works FIX!!!!
     echo "add ref user"
-    python manage.py createsuperuser --settings $settings_prefix --username $superusername --email $superuseremail
+
+    if ! python manage.py shell --settings $settings_prefix -c "from django.contrib.auth.models import User; User.objects.filter(username='$superusername').exists()"; then
+        python manage.py createsuperuser --settings $settings_prefix --username $superusername --email $superuseremail
+    else
+        echo "Superuser '$superusername' already exists. Skipping superuser creation."
+    fi
 
     sed -i "s/#replace//g" $mgt_home"/$appname/models/projModels.py"
     python manage.py makemigrations --settings $settings_prefix $appname
@@ -203,9 +206,6 @@ for val in "${arr[@]}"; do
     python manage.py makemigrations --settings $settings_prefix $appname
     python manage.py migrate --database=$db_name --settings $settings_prefix 
     sleep 2
-
-    # python manage.py makemigrations --settings $settings_prefix $appname
-    # python manage.py migrate --settings $settings_prefix $appname
 
     echo "Set up for DB $val is finished"
 
