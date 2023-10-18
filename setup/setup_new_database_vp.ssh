@@ -16,19 +16,19 @@ IFS='|'
 read -ra arr <<< "$APPS_DATABASE_MAPPING"
 
 for val in "${arr[@]}"; do
-    echo "$val"
+    echo "Setting up DB for: $val"
     sed -i "/^INSTALLED_APPS/ s/\[/&\n\t'$val',/" settings_vp.py
 
     #CHANGE species name to be used for database, should match kraken result for contamination checking
-    export db_name="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['$val']['db_name'])")"
-    export appname="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['$val']['app_name'])")"
+    export db_name="$(python -c "from $SETTINGS import APPS_DATABASE_MAPPING; print(APPS_DATABASE_MAPPING['$val'])")"
+    export appname="$(python -c "print('$val')")"
     export dbuser="$(python -c "from $SETTINGS import DB_USER; print(DB_USER)")"
 
     #CHANGE species name to be used for database, should match kraken result for contamination checking
     export species="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['$val']['species'])")"
 
     #CHANGE location for setup files to be stored for use later in the script
-    export ref_files="$(python -c "from $SETTINGS import REF_FILES; print(REF_FILES)")"
+    export ref_files="$(python -c "from $SETTINGS import SETUP_DB; print(SETUP_DB['$val']['ref_files'])")"
 
     #CHANGE full path to modified settings file
     export settingfile="$(python -c "from $SETTINGS import SETTING_FILE; print(SETTING_FILE)")"
@@ -105,8 +105,9 @@ for val in "${arr[@]}"; do
     echo $(pwd)
 
     cd ../
+    echo "python manage.py makemigrations --settings $settings_prefix $appname"
     python manage.py makemigrations --settings $settings_prefix $appname
-    python manage.py makemigrations --settings $settings_prefix --merge
+    python manage.py makemigrations --settings $settings_prefix --merge 
     python manage.py migrate --settings $settings_prefix --database=$db_name
 
     echo "migrated"
@@ -123,9 +124,9 @@ for val in "${arr[@]}"; do
     sleep 2
 
     cd ../
-    python manage.py makemigrations --settings $settings_prefix $appname
+    python manage.py makemigrations --settings $settings_prefix $appname 
     python manage.py migrate --settings $settings_prefix --database=$db_name
-    sleep 1
+    sleep 2
     cd $mgt_home"Scripts"
 
     echo aps
@@ -139,7 +140,7 @@ for val in "${arr[@]}"; do
     cd ../
     python manage.py makemigrations --settings $settings_prefix $appname
     #read  -p "Press enter after fixing ap_N migration order problem" mainmenuinput
-    python manage.py migrate --settings $settings_prefix --database=$db_name
+    python manage.py migrate --settings $settings_prefix --database=$db_name 
     sleep 1
     cd $mgt_home"Scripts"
 
@@ -161,16 +162,20 @@ for val in "${arr[@]}"; do
     python addClonalComplexes.py ../ Mgt $appname  $ref_files"ccInfo.txt"  $ref_files"ClonalComplexes/" $settings_prefix
     sleep 2;
 
+    cd ..
+
+    python manage.py makemigrations --settings $settings_prefix $appname
+    python manage.py migrate --settings $settings_prefix --database=$db_name
+
 
     #currently only Ref works FIX!!!!
     echo "add ref user"
-    cd ..
     python manage.py createsuperuser --settings $settings_prefix --username $superusername --email $superuseremail
 
     sed -i "s/#replace//g" $mgt_home"/$appname/models/projModels.py"
-    # python manage.py makemigrations --settings $settings_prefix $appname
-    # python manage.py migrate --settings $settings_prefix --database=$db_name
-    sleep 1
+    python manage.py makemigrations --settings $settings_prefix $appname
+    python manage.py migrate --settings $settings_prefix --database=$db_name
+    sleep 2
 
     cd $mgt_home"Scripts"
 
@@ -183,25 +188,33 @@ for val in "${arr[@]}"; do
     echo "add view table"
     # cd $mgt_home"Scripts"
     python genViewSqlAndClass.py ../ Mgt $appname $dbuser $settings_prefix
-    sleep 1
+    sleep 2
     head -5 $mgt_home"$appname/models/autoGenViews.py" > views_head
-    sleep 1
+    sleep 2
     cat $mgt_home"Scripts/views_head" $mgt_home"Scripts/autoGenView" > autoGenViews.py;
     mv $mgt_home"Scripts/autoGenViews.py" $mgt_home"/$appname/models"
 
-    sleep 1
+    sleep 2
     rm views_head
     psql -U blankuser -d ${db_name} -f ./runOnDb.sql
 
 
     cd ../
     python manage.py makemigrations --settings $settings_prefix $appname
-    python manage.py migrate --settings $settings_prefix --database=$db_name
-    sleep 1
+    python manage.py migrate --database=$db_name --settings $settings_prefix 
+    sleep 2
 
-    echo "finished"
+    # python manage.py makemigrations --settings $settings_prefix $appname
+    # python manage.py migrate --settings $settings_prefix $appname
+
+    echo "Set up for DB $val is finished"
+
     echo $(pwd)
     cd Mgt
     echo $(pwd)
 
 done
+
+cd ..
+
+python manage.py migrate --settings $settings_prefix 

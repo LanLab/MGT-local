@@ -31,7 +31,8 @@ DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', '0.0.0.0', '[::1]', '*']
 
 INSTALLED_APPS = [
-	'Blankdb2',
+	'Charger',
+	'Clawclip',
     'django_tables2',
     'Home',
     'MGTdb_shared',
@@ -95,10 +96,10 @@ FILE_UPLOAD_DIRECTORY_PERMISSIONS=0o774
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
 # 2018, Jan 9 - require a db router (if multiple databases)
-NCBI_RETRIEVAL_FREQUENCY = {'Blankdb2': None, } # CHANGE
+NCBI_RETRIEVAL_FREQUENCY = {'Charger': None, 'Clawclip': None} # CHANGE
 
 DATABASE_ROUTERS = ['Mgt.router.GenericRouter']
-APPS_DATABASE_MAPPING = { 'Blankdb2': 'blankdb2',  } #CHANGE change to appname in INSTALLED_APPS and database DATABASES in name normally upper and lowercase first letter i.e. Salmonella and salmonella
+APPS_DATABASE_MAPPING = { 'Clawclip':'clawclip', 'Charger': 'charger' } #CHANGE change to appname in INSTALLED_APPS and database DATABASES in name normally upper and lowercase first letter i.e. Salmonella and salmonella
 
 DATABASES = {
     'default': {
@@ -117,22 +118,22 @@ DATABASES = {
     # #     'PASSWORD': 'blankpassword', #CHANGE add postgres password
     # #     'NAME': 'blankdb',#CHANGE to new database name
     # # },
-    'blankdb2': {
+    'charger': {
         "ENGINE": "django.db.backends.postgresql",
         "USER": 'blankuser',
         "PASSWORD": 'blankpassword',
         "HOST": "0.0.0.0",
         "PORT": "5432",
-        'NAME': 'blankdb2',
+        'NAME': 'charger',
     },
-    # 'blankdb3': {
-    #     "ENGINE": "django.db.backends.postgresql",
-    #     "USER": 'blankuser',
-    #     "PASSWORD": 'blankpassword',
-    #     "HOST": "0.0.0.0",
-    #     "PORT": "5432",
-    #     'NAME': 'blankdb3',
-    # },
+    'clawclip': {
+        "ENGINE": "django.db.backends.postgresql",
+        "USER": 'blankuser',
+        "PASSWORD": 'blankpassword',
+        "HOST": "0.0.0.0",
+        "PORT": "5432",
+        'NAME': 'clawclip',
+    },
 }
 
 NONLOCALHOST='0.0.0.0' # leave as 0.0.0.0 for local install
@@ -236,7 +237,7 @@ DATE_FORMAT = 'Y-m-d'
 STATIC_URL = '/static/'
 STATIC_ROOT = 'Static/'
 
-RAWQUERIES_DISPLAY = {'Blankdb2': '', }
+RAWQUERIES_DISPLAY = {'Clawclip': '', 'Charger': ''}
 
 DB_USER='blankuser'
 SETTING_FILE="/home/vandana/MGT-local/Mgt/Mgt/Mgt/settings_vp.py"
@@ -245,29 +246,31 @@ SETTINGS_PREFIX="Mgt.settings_vp"
 REFALLELES="species_specific_alleles/"
 REF_FILES="tmp_setup_files/"
 CONDAENV="mgtenv"
-SUPERUSERNAME="blankblank"
-SUPERUSEREMAIL="blank@blank.blank"
+SUPERUSERNAME="blankblank1"
+SUPERUSEREMAIL="blank1@blank1.blank1"
 
 
 SETUP_DB = {
-    'Blankdb2': {
-        'db_name': 'blankdb2', # unique 
-        'app_name': 'Blankdb2', # unique 
-        'species': 'Blankus Databasus', # unique 
+    'Charger': {
+        # 'db_name': 'charger', # ALREADY IN PAGE  
+        # 'app_name': 'Charger', # ALREADY IN PAGE  
+        'species': '<i> Dell Laptop Charger </i>', # unique 
         'ref_genome':"/home/vandana/MGT-local/setup/example_inputs/genome.fasta", # unique 
         'lociloc':"/home/vandana/MGT-local/setup/example_inputs/lociLocationsInRef.txt", # unique
         'scheme_accessions':"/home/vandana/MGT-local/setup/example_inputs/Schemes", # unique 
         'schemeno':3, # unique 
         'odcls':"1,2,5,10", # unique 
+        'ref_files': 'tmp_setup_files/Charger/'
     }, 
-    # 'Blankdb3': {
-    #     'db_name': 'blankdb3', # unique 
-    #     'app_name': 'Blankdb3', # unique 
-    #     'species': 'Blank but also a Database', # unique 
-    #     'ref_genome':"/home/vandana/MGT-local/setup/example_inputs_2/genome.fasta", # unique 
-    #     'lociloc':"/home/vandana/MGT-local/setup/example_inputs_2/lociLocationsInRef.txt", # unique
-    #     'scheme_accessions':"/home/vandana/MGT-local/setup/example_inputs_2/Schemes", # unique 
-    #     'schemeno':3, # unique 
-    #     'odcls':"1,2,5,10", # unique 
-    # }
+    'Clawclip': {
+        # 'db_name': 'clawclip', # ALREADY IN PAGE  
+        # 'app_name': 'Clawclip', # ALREADY IN PAGE 
+        'species': '<i> Cute Beige Claw Clip </i>', # unique 
+        'ref_genome':"/home/vandana/MGT-local/setup/example_inputs_2/genome.fasta", # unique 
+        'lociloc':"/home/vandana/MGT-local/setup/example_inputs_2/lociLocationsInRef.txt", # unique
+        'scheme_accessions':"/home/vandana/MGT-local/setup/example_inputs_2/Schemes", # unique 
+        'schemeno':3, # unique 
+        'odcls':"1,2,5,10", # unique 
+        'ref_files': 'tmp_setup_files/Clawclip/'
+    }
 }
