@@ -22,7 +22,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_AUTO_FIELD='django.db.models.AutoField'
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '' #CHANGE add random string
+SECRET_KEY = '' # CHANGE add random string
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -54,7 +54,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'Mgt.urls_template' # CHANGE to new urls filename
+ROOT_URLCONF = 'Mgt.urls_template'
 
 TEMPLATES = [
     {
@@ -92,10 +92,10 @@ FILE_UPLOAD_DIRECTORY_PERMISSIONS=0o774
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
 # 2018, Jan 9 - require a db router (if multiple databases)
-NCBI_RETRIEVAL_FREQUENCY = {'Blankdb': None } # CHANGE
+NCBI_RETRIEVAL_FREQUENCY = {'Blankdb': None } # CHANGE 
 
 DATABASE_ROUTERS = ['Mgt.router.GenericRouter']
-APPS_DATABASE_MAPPING = {'Blankdb': 'blankdb'} #CHANGE change to appname in INSTALLED_APPS and database DATABASES in name normally upper and lowercase first letter i.e. Salmonella and salmonella
+APPS_DATABASE_MAPPING = {'Blankdb': 'blankdb'} # CHANGE key should be in uppercase and value should be in lowercase (i.e. 'Salmonella': 'salmonella')
 
 DATABASES = {
     'default': {
@@ -112,15 +112,16 @@ DATABASES = {
         'PORT': '5432',
         'USER': 'blankuser', #CHANGE add postgres user
         'PASSWORD': 'blankpassword', #CHANGE add postgres password
-        'NAME': 'blankdb',#CHANGE to new database name
+        'NAME': 'blankdb',# CHANGE to new database name
     }, 
-    # 'blankdb2': { #CHANGE postgres database name
+    # --- Example Database ---
+    # 'salmonella': { #CHANGE postgres database name
     #     'ENGINE': 'django.db.backends.postgresql',
     #     'HOST': '0.0.0.0',
     #     'PORT': '5432',
-    #     'USER': 'blankuser', #CHANGE add postgres user
-    #     'PASSWORD': 'blankpassword', #CHANGE add postgres password
-    #     'NAME': 'blankb2',#CHANGE to new database name
+    #     'USER': 'blankuser',
+    #     'PASSWORD': 'blankpassword', 
+    #     'NAME': 'salmonella',
     # }
 }
 
@@ -157,22 +158,23 @@ DEFAULT_FROM_EMAIL = 'mgtdb@babs.unsw.edu.au'
 LOGIN_REDIRECT_URL = '/'
 
 
-#RELATIVE PATHS FROM folder containing manage.py in this repo to folder on your system
-SUBDIR_REFERENCES = './References/' #CHANGE location where reference genomes will be stored
-SUBDIR_ALLELES = './Alleles/' #CHANGE location where allele sequences for the database will be stored
-MEDIA_ROOT = './Uploads/'#CHANGE location where uploaded reads/allele files will be stored
-BLASTALLELES='./species_specific_alleles/'#CHANGE location where initial allele sequences will be stored for read2allele
+# RELATIVE PATHS FROM folder containing manage.py in this repo to folder on your system
+# NOTE: Please move the data folder to a secure place after setting up your databases.  
+SUBDIR_REFERENCES = '.data/References/' 
+SUBDIR_ALLELES = '.data/Alleles/' 
+MEDIA_ROOT = '.data/Uploads/'
+BLASTALLELES='.data/species_specific_alleles/'
 
 # ABSOLUTE PATH VERSIONS OF ABOVE
-ABS_SUBDIR_REFERENCES = 'References/' #CHANGE location where reference genomes will be stored
-ABS_SUBDIR_ALLELES = 'Alleles/' #CHANGE location where allele sequences for the database will be stored
-ABS_MEDIA_ROOT = "Uploads/" #CHANGE location where uploaded reads/allele files will be stored
-ABS_BLASTALLELES='species_specific_alleles/'#CHANGE location where initial allele sequences will be stored for read2allele
+ABS_SUBDIR_REFERENCES = 'data/References/'
+ABS_SUBDIR_ALLELES = 'data/Alleles/' 
+ABS_MEDIA_ROOT = "data/Uploads/" 
+ABS_BLASTALLELES='data/species_specific_alleles/'
 
-FILES_FOR_DOWNLOAD = "files_for_download/"#CHANGE replace path with storage location of allele and profile collections
-TMPFOLDER = "tmp_files/"#CHANGE replace path with tmp specified in setup script
+FILES_FOR_DOWNLOAD = "data/files_for_download/"
+TMPFOLDER = "data/tmp_files/"
 
-ASCPKEY = "/Path/to/.aspera/connect/etc/asperaweb_id_dsa.openssh"#CHANGE ONLY NEEDED IF RUNNING cron_pipeline --dl_reads
+ASCPKEY = "/Path/to/.aspera/connect/etc/asperaweb_id_dsa.openssh" # CHANGE ONLY NEEDED IF RUNNING cron_pipeline --dl_reads
 
 KRAKEN_DEFAULT_DB='/Path/to/folder/minikraken_20171013_4GB/'#CHANGE ONLY NEEDED IF RUNNING cron_pipeline --reads_to_alleles
 
@@ -218,30 +220,47 @@ DATE_FORMAT = 'Y-m-d'
 STATIC_URL = '/static/'
 STATIC_ROOT = 'Static/'
 
-RAWQUERIES_DISPLAY = {'Blankdb': '', } # CHANGE to extra columns in isolateList table or '' for default columns. 
+# CHANGE to extra columns in isolateList table or '' for default columns (i.e. 'Salmonella': '').
+RAWQUERIES_DISPLAY = {'Blankdb': '', }  
 
-SPECIES = { 'Blankdb': '<i> Blankus Databasus </i>', } # CHANGE 
+# CHANGE to species name that will be present in the reference. (i.e. 'Salmonella': '<i> Salmonella Typhimurium </i>')
+SPECIES = { 'Blankdb': '<i> Blankus Databasus </i>', } 
 
-REF_GENOME = { 'Blankdb': 'path/to/blankdb_ref_genome', } #CHANGE 
+# CHANGE to absolute path of the reference genome (i.e. 'Salmonella': '/home/user/MGT-local/../ref_genome.fasta.')
+REF_GENOME = { 'Blankdb': 'path/to/blankdb_ref_genome', } 
 
-LOCI_LOC = { 'Blankdb': 'path/to/blankdb_locilocs', } #CHANGE 
+# CHANGE to absolute path of the loci locations  (i.e. 'Salmonella': '/home/user/MGT-local/../loci_locations.txt')
+LOCI_LOC = { 'Blankdb': 'path/to/blankdb_locilocs', } 
 
-SCHEME_ACCESSIONS = {'Blankdb': 'path/to/blankdb_scheme_accessions' } #CHANGE 
+# CHANGE to absolute path of the scheme accessions  (i.e. 'Salmonella': '/home/user/MGT-local/../scheme_accessions')
+SCHEME_ACCESSIONS = {'Blankdb': 'path/to/blankdb_scheme_accessions' } 
 
-SCHEME_NO = {'Blankdb': 3 } # CHANGE  
+# CHANGE to the number of schemes for the species. (i.e. 'Salmonella': 9 )
+SCHEME_NO = {'Blankdb': 3 } 
 
-ODCLS = { 'Blankdb': "1,2,5,10", } #CHANGE 
+# CHANGE to the number of schemes for the species. (i.e. 'Salmonella': 9 )
+ODCLS = { 'Blankdb': "1,2,5,10", } 
 
+# CHANGE to absolute path of the reference files  (i.e. 'Salmonella': '/home/user/MGT-local/../ref_files')
 REF_FILES = {'Blankdb': 'path/to/blankdb_ref_files'}
 
-DB_USER='postgres' # CHANGE
-SETTING_FILE="path/to/setting_file" #CHANGE
-PATH_MGT="path/to/mgt-local/" #CHANGE
-SETTINGS_PREFIX="Mgt.settings_template" #CHANGE 
-REFALLELES="path/to/species_specific_alleles/" #CHANGE 
-CONDAENV="mgtenv" #CHANGE 
+DB_USER='postgres' # CHANGE to postgres user 
+SETTING_FILE="path/to/setting_file" # CHANGE TO path for settings_template
+PATH_MGT="path/to/mgt-local/" # CHANGE TO ROOT PATH OF MGT-local
+
+# OPTIONAL CHANGE: Change if using another settings file (NOTE: You will need to change the variable in setup_new_database.ssh if this is changed) 
+SETTINGS_PREFIX="Mgt.settings_template" 
+
+# CHANGE to absolute path of the species specific alleles (i.e. 'Salmonella': '/home/user/MGT-local/../species_specific_alleles')
+REFALLELES="path/to/species_specific_alleles/" 
+
+CONDAENV="mgtenv" 
+
+# CHANGE to the superusername you want for your databases 
 SUPERUSERNAME="superusername" # CHANGE 
-SUPERUSEREMAIL="superusername@ref.ref" #CHANGE 
+
+# CHANGE to the superuseremail you want for your databases 
+SUPERUSEREMAIL="superusername@ref.ref"  
 
 
 

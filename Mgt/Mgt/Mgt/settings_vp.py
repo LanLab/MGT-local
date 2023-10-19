@@ -31,6 +31,8 @@ DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', '0.0.0.0', '[::1]', '*']
 
 INSTALLED_APPS = [
+	'Charger',
+	'Clawclip',
     'django_tables2',
     'Home',
     'MGTdb_shared',
@@ -168,19 +170,21 @@ LOGIN_REDIRECT_URL = '/'
 
 
 #RELATIVE PATHS FROM folder containing manage.py in this repo to folder on your system
-SUBDIR_REFERENCES = './References/' #CHANGE location where reference genomes will be stored
-SUBDIR_ALLELES = './Alleles/' #CHANGE location where allele sequences for the database will be stored
-MEDIA_ROOT = './Uploads/'#CHANGE location where uploaded reads/allele files will be stored
-BLASTALLELES='./species_specific_alleles/'#CHANGE location where initial allele sequences will be stored for read2allele
+SUBDIR_REFERENCES = '.data/References/' 
+SUBDIR_ALLELES = '.data/Alleles/' 
+MEDIA_ROOT = '.data/Uploads/'
+BLASTALLELES='.data/species_specific_alleles/'
 
 # ABSOLUTE PATH VERSIONS OF ABOVE
-ABS_SUBDIR_REFERENCES = 'References/' #CHANGE location where reference genomes will be stored
-ABS_SUBDIR_ALLELES = 'Alleles/' #CHANGE location where allele sequences for the database will be stored
-ABS_MEDIA_ROOT = "Uploads/" #CHANGE location where uploaded reads/allele files will be stored
-ABS_BLASTALLELES='species_specific_alleles/'#CHANGE location where initial allele sequences will be stored for read2allele
+ABS_SUBDIR_REFERENCES = 'data/References/'
+ABS_SUBDIR_ALLELES = 'data/Alleles/' 
+ABS_MEDIA_ROOT = "data/Uploads/" 
+ABS_BLASTALLELES='data/species_specific_alleles/'
 
-FILES_FOR_DOWNLOAD = "files_for_download/"#CHANGE replace path with storage location of allele and profile collections
-TMPFOLDER = "tmp_files/"#CHANGE replace path with tmp specified in setup script
+FILES_FOR_DOWNLOAD = "data/files_for_download/"
+TMPFOLDER = "data/tmp_files/"
+
+
 
 ASCPKEY = "/Path/to/.aspera/connect/etc/asperaweb_id_dsa.openssh"#CHANGE ONLY NEEDED IF RUNNING cron_pipeline --dl_reads
 
@@ -268,18 +272,15 @@ ODCLS = {
 }
 
 REF_FILES = { 
-    'Clawclip': 'tmp_setup_files/Clawclip/', 
-    'Charger': 'tmp_setup_files/Charger/'
-    # 'Clawclip': "1,2,5,10", 
-    # 'Charger': "1,2,5,10"
-
+    'Clawclip': 'data/tmp_setup_files/Clawclip/', 
+    'Charger': 'data/tmp_setup_files/Charger/'
 }
 
 DB_USER='blankuser'
 SETTING_FILE="/home/vandana/MGT-local/Mgt/Mgt/Mgt/settings_vp.py"
 PATH_MGT="/home/vandana/MGT-local/"
 SETTINGS_PREFIX="Mgt.settings_vp"
-REFALLELES="species_specific_alleles/"
+REFALLELES="data/species_specific_alleles/"
 CONDAENV="mgtenv"
 SUPERUSERNAME="blank2blank2"
 SUPERUSEREMAIL="blank2@blank2.blank2"

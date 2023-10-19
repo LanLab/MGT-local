@@ -1,6 +1,6 @@
 cd ../Mgt/Mgt/Scripts
-rm -rf Alleles files_for_download References tmp_files tmp_setup_files Uploads species_specific_alleles runOnDb.sql autoGenView
+rm -rf  data 
 cd ../
-rm -rf Charger References Alleles Clawclip
+rm -rf Charger data Clawclip
 cd ../../setup
 
