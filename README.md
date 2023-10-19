@@ -27,7 +27,7 @@ examples are in the setup/example_inputs folder
     mamba env create --file=/path/to/MGT-local/setup/mgt_conda_env.yaml
     ````
 
-## 3. modify settings and urls files
+## 3. modify settings
 In the /Mgt/Mgt/Mgt folder find the settings_template.py file and rename any lines with #CHANGE comments as per comment instructions. You can also make a copy of this file and update the changes in the copy. 
 ## 4. run /setup/setup_new_database.ssh
 in command line use postgres password when prompted
