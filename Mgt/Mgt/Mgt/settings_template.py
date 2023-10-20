@@ -30,6 +30,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['0.0.0.0', 'localhost', '127.0.0.1', '[::1]', '*']
 
 INSTALLED_APPS = [
+    # CHANGE add new databases here
     'django_tables2',
     'Home',
     'MGTdb_shared',
@@ -92,10 +93,10 @@ FILE_UPLOAD_DIRECTORY_PERMISSIONS=0o774
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
 # 2018, Jan 9 - require a db router (if multiple databases)
-NCBI_RETRIEVAL_FREQUENCY = {'Blankdb': None } # CHANGE 
+NCBI_RETRIEVAL_FREQUENCY = {'Clawclip': None } # CHANGE 
 
 DATABASE_ROUTERS = ['Mgt.router.GenericRouter']
-APPS_DATABASE_MAPPING = {'Blankdb': 'blankdb'} # CHANGE key should be in uppercase and value should be in lowercase (i.e. 'Salmonella': 'salmonella')
+APPS_DATABASE_MAPPING = {'Clawclip': 'blankdb'} # CHANGE key should be in uppercase and value should be in lowercase (i.e. 'Salmonella': 'salmonella')
 
 DATABASES = {
     'default': {
@@ -106,23 +107,14 @@ DATABASES = {
         'PASSWORD': 'blankpassword', #CHANGE add postgres password
         'NAME': 'default',
     },
-    'blankdb': { #CHANGE postgres database name
-        'ENGINE': 'django.db.backends.postgresql',
-        'HOST': '0.0.0.0',
-        'PORT': '5432',
-        'USER': 'blankuser', #CHANGE add postgres user
-        'PASSWORD': 'blankpassword', #CHANGE add postgres password
-        'NAME': 'blankdb',# CHANGE to new database name
-    }, 
-    # --- Example Database ---
-    # 'salmonella': { #CHANGE postgres database name
-    #     'ENGINE': 'django.db.backends.postgresql',
-    #     'HOST': '0.0.0.0',
-    #     'PORT': '5432',
-    #     'USER': 'blankuser',
-    #     'PASSWORD': 'blankpassword', 
-    #     'NAME': 'salmonella',
-    # }
+    'clawclip': {
+        "ENGINE": "django.db.backends.postgresql",
+        "USER": 'blankuser',
+        "PASSWORD": 'blankpassword',
+        "HOST": "0.0.0.0",
+        "PORT": "5432",
+        'NAME': 'clawclip',
+    },    
 }
 
 NONLOCALHOST='0.0.0.0' # leave as 0.0.0.0 for local install
@@ -185,7 +177,7 @@ KATANA_SETTINGS=''
 ##############################
 
 #CHANGE BELOW TO list species specific cutoffs/values
-SPECIES_SEROVAR = {'Blankdb': {"species":'Blank species',
+SPECIES_SEROVAR = {'Clawclip': {"species":'Blank species',
                                   "serovar":'',
                                   "min_largest_contig":60000,
                                   "max_contig_no":700,
@@ -221,47 +213,5 @@ STATIC_URL = '/static/'
 STATIC_ROOT = 'Static/'
 
 # CHANGE to extra columns in isolateList table or '' for default columns (i.e. 'Salmonella': '').
-RAWQUERIES_DISPLAY = {'Blankdb': '', }  
-
-# CHANGE to species name that will be present in the reference. (i.e. 'Salmonella': '<i> Salmonella Typhimurium </i>')
-SPECIES = { 'Blankdb': '<i> Blankus Databasus </i>', } 
-
-# CHANGE to absolute path of the reference genome (i.e. 'Salmonella': '/home/user/MGT-local/../ref_genome.fasta.')
-REF_GENOME = { 'Blankdb': 'path/to/blankdb_ref_genome', } 
-
-# CHANGE to absolute path of the loci locations  (i.e. 'Salmonella': '/home/user/MGT-local/../loci_locations.txt')
-LOCI_LOC = { 'Blankdb': 'path/to/blankdb_locilocs', } 
-
-# CHANGE to absolute path of the scheme accessions  (i.e. 'Salmonella': '/home/user/MGT-local/../scheme_accessions')
-SCHEME_ACCESSIONS = {'Blankdb': 'path/to/blankdb_scheme_accessions' } 
-
-# CHANGE to the number of schemes for the species. (i.e. 'Salmonella': 9 )
-SCHEME_NO = {'Blankdb': 3 } 
-
-# CHANGE to the number of schemes for the species. (i.e. 'Salmonella': 9 )
-ODCLS = { 'Blankdb': "1,2,5,10", } 
-
-# CHANGE to absolute path of the reference files  (i.e. 'Salmonella': '/home/user/MGT-local/../ref_files')
-REF_FILES = {'Blankdb': 'path/to/blankdb_ref_files'}
-
-DB_USER='postgres' # CHANGE to postgres user 
-SETTING_FILE="path/to/setting_file" # CHANGE TO path for settings_template
-PATH_MGT="path/to/mgt-local/" # CHANGE TO ROOT PATH OF MGT-local
-
-# OPTIONAL CHANGE: Change if using another settings file (NOTE: You will need to change the variable in setup_new_database.ssh if this is changed) 
-SETTINGS_PREFIX="Mgt.settings_template" 
-
-# CHANGE to absolute path of the species specific alleles (i.e. 'Salmonella': '/home/user/MGT-local/../species_specific_alleles')
-REFALLELES="path/to/species_specific_alleles/" 
-
-CONDAENV="mgtenv" 
-
-# CHANGE to the superusername you want for your databases 
-SUPERUSERNAME="superusername" # CHANGE 
-
-# CHANGE to the superuseremail you want for your databases 
-SUPERUSEREMAIL="superusername@ref.ref"  
-
-
-
+RAWQUERIES_DISPLAY = {'Clawclip': '', }  
 

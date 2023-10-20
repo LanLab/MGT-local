@@ -14,6 +14,7 @@ The MGT was written as a website and associated database so the setup of a local
    4. \+ or - strand
    5. chromosome number (1 for all loci for most bacteria)
 3. folder named "Schemes" -  with one file for each MGT level named MGTN_gene_accessions.txt where N is the level number. Each file lists the loci to be used in each level.
+4. Clawclip.py - a file with variables for file paths to setup a new database. 
 
 examples are in the setup/example_inputs folder
 
@@ -28,8 +29,11 @@ examples are in the setup/example_inputs folder
     ````
 
 ## 3. modify settings
-In the /Mgt/Mgt/Mgt folder find the settings_template.py file and rename any lines with #CHANGE comments as per comment instructions. You can also make a copy of this file and update the changes in the copy. 
+In the /Mgt/Mgt/Mgt folder find the settings_template.py file and rename any lines with #CHANGE comments as per comment instructions. You can also make a copy of this file and update the changes in the copy. *Clawclip* is an example of what the changes would look like. 
+
 ## 4. run /setup/setup_new_database.ssh
+use the command as follows: 
+`./setup/setup_new_database.ssh example_inputs_2.Clawclip`
 in command line use postgres password when prompted
 ## 5. access local mgt database site 
 run `python manage.py runserver --settings Mgt.settings_template` and access the website locally using host in settings file (http://localhost:8000/ by default)

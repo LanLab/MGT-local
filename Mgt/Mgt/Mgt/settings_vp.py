@@ -31,8 +31,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', '0.0.0.0', '[::1]', '*']
 
 INSTALLED_APPS = [
-	'Charger',
-	'Clawclip',
+    'Clawclip',
     'django_tables2',
     'Home',
     'MGTdb_shared',
@@ -99,7 +98,7 @@ FILE_UPLOAD_DIRECTORY_PERMISSIONS=0o774
 NCBI_RETRIEVAL_FREQUENCY = {'Charger': None, 'Clawclip': None} # CHANGE
 
 DATABASE_ROUTERS = ['Mgt.router.GenericRouter']
-APPS_DATABASE_MAPPING = { 'Clawclip':'clawclip', 'Charger': 'charger' } #CHANGE change to appname in INSTALLED_APPS and database DATABASES in name normally upper and lowercase first letter i.e. Salmonella and salmonella
+APPS_DATABASE_MAPPING = {'Clawclip':'clawclip' } #CHANGE change to appname in INSTALLED_APPS and database DATABASES in name normally upper and lowercase first letter i.e. Salmonella and salmonella
 
 DATABASES = {
     'default': {
@@ -118,14 +117,6 @@ DATABASES = {
     # #     'PASSWORD': 'blankpassword', #CHANGE add postgres password
     # #     'NAME': 'blankdb',#CHANGE to new database name
     # # },
-    'charger': {
-        "ENGINE": "django.db.backends.postgresql",
-        "USER": 'blankuser',
-        "PASSWORD": 'blankpassword',
-        "HOST": "0.0.0.0",
-        "PORT": "5432",
-        'NAME': 'charger',
-    },
     'clawclip': {
         "ENGINE": "django.db.backends.postgresql",
         "USER": 'blankuser',
@@ -239,48 +230,4 @@ DATE_FORMAT = 'Y-m-d'
 STATIC_URL = '/static/'
 STATIC_ROOT = 'Static/'
 
-RAWQUERIES_DISPLAY = {'Clawclip': '', 'Charger': ''}
-
-SPECIES = {
-    'Clawclip': '<i> Cute Beige Claw Clip </i>', 
-    'Charger': '<i> Dell Laptop Charger </i>' 
-}
-
-REF_GENOME = {
-    'Clawclip': '/home/vandana/MGT-local/setup/example_inputs_2/genome.fasta', 
-    'Charger': '/home/vandana/MGT-local/setup/example_inputs/genome.fasta'
-}
-
-LOCI_LOC = {
-    'Clawclip': '/home/vandana/MGT-local/setup/example_inputs_2/lociLocationsInRef.txt', 
-    'Charger': '/home/vandana/MGT-local/setup/example_inputs/lociLocationsInRef.txt'
-}
-
-SCHEME_ACCESSIONS = {
-    'Clawclip': '/home/vandana/MGT-local/setup/example_inputs_2/Schemes', 
-    'Charger': '/home/vandana/MGT-local/setup/example_inputs/Schemes',
-}
-
-SCHEME_NO = { 
-    'Clawclip': 3, 
-    'Charger': 3             
-}
-
-ODCLS = { 
-    'Clawclip': "1,2,5,10", 
-    'Charger': "1,2,5,10"
-}
-
-REF_FILES = { 
-    'Clawclip': 'data/tmp_setup_files/Clawclip/', 
-    'Charger': 'data/tmp_setup_files/Charger/'
-}
-
-DB_USER='blankuser'
-SETTING_FILE="/home/vandana/MGT-local/Mgt/Mgt/Mgt/settings_vp.py"
-PATH_MGT="/home/vandana/MGT-local/"
-SETTINGS_PREFIX="Mgt.settings_vp"
-REFALLELES="data/species_specific_alleles/"
-CONDAENV="mgtenv"
-SUPERUSERNAME="blank2blank2"
-SUPERUSEREMAIL="blank2@blank2.blank2"
+RAWQUERIES_DISPLAY = {'Clawclip': '', }

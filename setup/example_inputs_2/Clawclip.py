@@ -1,0 +1,17 @@
+DB_NAME='clawclip'
+APPNAME='Clawclip'
+SPECIES = '<i> Cute Beige Claw Clip </i>'
+REF_GENOME = '/home/vandana/MGT-local/setup/example_inputs_2/genome.fasta'
+LOCI_LOC = '/home/vandana/MGT-local/setup/example_inputs_2/lociLocationsInRef.txt'
+SCHEME_ACCESSIONS = '/home/vandana/MGT-local/setup/example_inputs_2/Schemes'
+SCHEME_NO = 3
+ODCLS = "1,2,5,10"
+REF_FILES = 'data/tmp_setup_files/Clawclip/'
+DB_USER='blankuser'
+SETTING_FILE="/home/vandana/MGT-local/Mgt/Mgt/Mgt/settings_vp.py"
+PATH_MGT="/home/vandana/MGT-local/"
+SETTINGS_PREFIX="Mgt.settings_vp"
+REFALLELES="data/species_specific_alleles/"
+CONDAENV="mgtenv"
+SUPERUSERNAME="blank2blank2"
+SUPERUSEREMAIL="blank2@blank2.blank2"
