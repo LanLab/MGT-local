@@ -33,7 +33,7 @@ In the /Mgt/Mgt/Mgt folder find the settings_template.py file and rename any lin
 
 ## 4. run /setup/setup_new_database.ssh
 use the command as follows: 
-`./setup/setup_new_database.ssh example_inputs_2.Clawclip`
+`./setup/setup_new_database.ssh example_inputs_2.setupPath`
 in command line use postgres password when prompted
 ## 5. access local mgt database site 
 run `python manage.py runserver --settings Mgt.settings_template` and access the website locally using host in settings file (http://localhost:8000/ by default)
