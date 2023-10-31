@@ -16,7 +16,7 @@ The MGT was written as a website and associated database so the setup of a local
 3. folder named "Schemes" -  with one file for each MGT level named MGTN_gene_accessions.txt where N is the level number. Each file lists the loci to be used in each level.
 4. setupPath.py - a file with variables for file paths to setup a new database. 
 
-examples are in the setup/example_inputs folder
+examples are in the setup/example_inputs folder 
 
 ## 2. install dependencies
 1. install [postgres](https://www.postgresql.org/download/)
