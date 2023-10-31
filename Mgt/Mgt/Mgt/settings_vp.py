@@ -161,6 +161,7 @@ LOGIN_REDIRECT_URL = '/'
 
 
 #RELATIVE PATHS FROM folder containing manage.py in this repo to folder on your system
+# NOTE: Please move the data folders to a secure location once setup is complete.  
 SUBDIR_REFERENCES = '.data/References/' 
 SUBDIR_ALLELES = '.data/Alleles/' 
 MEDIA_ROOT = '.data/Uploads/'
