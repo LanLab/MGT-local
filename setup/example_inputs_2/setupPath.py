@@ -47,5 +47,4 @@ CONDAENV="mgtenv"
 SUPERUSERNAME="blank2blank2"
 
 # CHANGE superuseremail of the django application 
-
 SUPERUSEREMAIL="blank2@blank2.blank2"

@@ -22,7 +22,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DEFAULT_AUTO_FIELD='django.db.models.AutoField'
 
-SECRET_KEY = 'exo8nsf7fx&e@vs=#^-5)#$c%o^@8sm$$fu&3*%=g475o--ej_'
+SECRET_KEY = 'exo8nsf7fx&e@vs=#^-5)#$c%o^@8sm$$fu&3*%=g475o--ej_' # CHANGE to new secret key 
 
 DEBUG = True
 
@@ -31,7 +31,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', '0.0.0.0', '[::1]', '*']
 
 INSTALLED_APPS = [
-    'Clawclip',
+    'Clawclip', # CHANGE add new databases to this list. 
     'django_tables2',
     'Home',
     'MGTdb_shared',
@@ -57,7 +57,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'Mgt.urls_template' # CHANGE to new urls filename
+ROOT_URLCONF = 'Mgt.urls_template' 
 
 TEMPLATES = [
     {
@@ -95,7 +95,7 @@ FILE_UPLOAD_DIRECTORY_PERMISSIONS=0o774
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
 # 2018, Jan 9 - require a db router (if multiple databases)
-NCBI_RETRIEVAL_FREQUENCY = {'Charger': None, 'Clawclip': None} # CHANGE
+NCBI_RETRIEVAL_FREQUENCY = {'Clawclip': None} # CHANGE to frequency of retrieval
 
 DATABASE_ROUTERS = ['Mgt.router.GenericRouter']
 APPS_DATABASE_MAPPING = {'Clawclip':'clawclip' } #CHANGE change to appname in INSTALLED_APPS and database DATABASES in name normally upper and lowercase first letter i.e. Salmonella and salmonella
