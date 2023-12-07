@@ -8,13 +8,13 @@ APPNAME='Clawclip'
 SPECIES = '<i> Cute Beige Claw Clip </i>'
 
 # CHANGE full path of the reference genome 
-REF_GENOME = '/home/vandana/MGT-local/setup/example_inputs_2/genome.fasta'
+REF_GENOME = '/home/vandana/MGT-local/setup/example_inputs/genome.fasta'
 
 # CHANGE full path of the lociLocations file 
-LOCI_LOC = '/home/vandana/MGT-local/setup/example_inputs_2/lociLocationsInRef.txt'
+LOCI_LOC = '/home/vandana/MGT-local/setup/example_inputs/lociLocationsInRef.txt'
 
 # CHANGE full path to folder of schemes 
-SCHEME_ACCESSIONS = '/home/vandana/MGT-local/setup/example_inputs_2/Schemes'
+SCHEME_ACCESSIONS = '/home/vandana/MGT-local/setup/example_inputs/Schemes'
 
 # CHANGE number of schemes 
 SCHEME_NO = 3
@@ -29,13 +29,13 @@ REF_FILES = 'data/tmp_setup_files/Clawclip/'
 DB_USER='blankuser'
 
 # CHANGE full path of the settings_template
-SETTING_FILE="/home/vandana/MGT-local/Mgt/Mgt/Mgt/settings_vp.py"
+SETTING_FILE="/home/vandana/MGT-local/Mgt/Mgt/Mgt/settings_template.py"
 
 # CHANGE full path of the root to MGT-local project 
 PATH_MGT="/home/vandana/MGT-local/"
 
 # CHANGE to settings prefix (relative path separated by dots)
-SETTINGS_PREFIX="Mgt.settings_vp"
+SETTINGS_PREFIX="Mgt.settings_template"
 
 # CHANGE full path of where you want to store species specific alleles that are generated. 
 REFALLELES="data/species_specific_alleles/"
