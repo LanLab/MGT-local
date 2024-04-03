@@ -1,0 +1,24 @@
+td.theHl {
+	background-color: #c69ff5;
+}
+
+td.theSel {
+	background-color: #9f6edb;
+}
+
+td.theHl.theSel{
+	background-color: #b18be0;
+}
+
+
+
+table.fixed {
+	display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+
+td.theLightYellow {
+	background-color: #e5d4fa;
+}

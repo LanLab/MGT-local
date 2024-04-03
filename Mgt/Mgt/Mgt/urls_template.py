@@ -13,7 +13,7 @@ Including another URLconf
 	1. Import the include() function: from django.conf.urls import url, include
 	2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from django.conf.urls import url, include
+from django.urls import re_path as url, include
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import reverse_lazy
@@ -26,8 +26,8 @@ from django.conf.urls.static import static
 
 urlpatterns = [
 	# url(r'^admin/', admin.site.urls),
-	url(r'', include(('Home.urls', 'Home'))),
-	url(r'^[bB]lankdb/', include(('Blankdb.urls', 'Blankdb'))), #CHANGE add new database name with regex at the start
+	url('', include(('Home.urls', 'Home'))),
+	url('', include(('MGTdb_shared.urls'))), #CHANGE add new database name with regex at the start
 	url(r'^accounts/', include('django_registration.backends.activation.urls')),
 	url(r'^accounts/', include('django.contrib.auth.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

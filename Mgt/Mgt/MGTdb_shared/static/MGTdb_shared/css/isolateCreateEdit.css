@@ -1,0 +1,10 @@
+.errorlist {
+	color: red;
+}
+
+
+#uploadFilesDiv {
+	border: 1px dashed lightgray;
+	text-align: center;
+	color: gray;
+}

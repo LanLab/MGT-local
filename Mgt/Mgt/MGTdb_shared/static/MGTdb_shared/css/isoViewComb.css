@@ -1,0 +1,49 @@
+.incorrect {
+	border:2px solid red;
+}
+
+.rowError{
+	color: red;
+}
+
+
+#searchDivs {
+	display: table;
+	table-layout: fixed;
+
+	width:90%;
+	height:100px;
+}
+
+
+#searchDivs div {
+	display: table-cell;
+	height:100px;
+}
+
+/* table.fixed { table-layout:fixed; width:100%; word-break:break-all;} */
+
+table.fixed {
+	display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.headingSpe {
+	color: #2e1e63; /* #64485c; */
+}
+
+.btn-inFilterBox {
+	background-color: #613597;
+	color:beige;
+	border-color: #613597;
+}
+.btn-inFilterBox:hover {
+	background-color: #7851a9;
+	color:white;
+	border-color: #7851a9;
+}
+
+.disabledFont{
+	color: gray;
+}

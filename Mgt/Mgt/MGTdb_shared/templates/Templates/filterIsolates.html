@@ -1,0 +1,50 @@
+<script type="text/javascript">
+	$(document).ready(function(){
+		initVisiblePopovers();
+	});
+</script>
+
+<div id="filterSearchBox" class="container bdr-default rounded">
+	<div>
+		<b class="subtitle is-5"> Filter isolates:<button type="button" class="btn" data-toggle="modal" data-target="#exampleModal" data-whatever="@filterIsolates" onclick="theHelpFns(this);"><span class='fas fa-info-circle'> </span></button></b>
+
+		<!-- table id="searchTbl" class="table is-bordered">
+		</table-->
+
+		<table id="theSearchTbl" class="table is-bordered"  class="table is-bordered">
+		</table>
+
+			<div class="float-right" role="group">
+				<button class="btn btn-default-outline-spe btn-sm" onclick="javascript:addRowToFilterTbl('theSearchTbl', {{dirColsInfo|safe}}, {{dirAps|safe}}, {{dirCcs|safe}}, {{serverStatusChoices|safe}}, {{assignStatusChoices|safe}}, {{privStatusChoices|safe}}, null, null, {{boolChoices|safe}});"> Add row </button>
+
+
+			</div>
+
+			<br>
+			<br>
+			<div class="container">
+
+				<div class="input-group">
+
+					Search type: &nbsp;
+
+					<div>
+						<input type="radio" id="andSearch" name="searchType" value="and" checked>
+						  <label for="andSearch">AND</label>
+					</div>
+					&nbsp;
+					<div>
+						<input type="radio" id="orSearch" name="searchType" value="or">
+						<label for="orSearch">OR</label>
+					</div>
+
+				</div>
+				<center>
+					<div class="btn-group" role="group">
+						<button type="button" id="filterIsolates" class="btn btn-default-spe"  onclick="javascript:sortElemsAndSend('{% url organism|stringformat:'s:search_isolateList' %}', 'theSearchTbl', {{dirColsInfo|safe}}, {{dirAps|safe}}, {{dirCcs|safe}}, {{serverStatusChoices|safe}}, {{assignStatusChoices|safe}}, {{privStatusChoices|safe}});"> Search </button>
+					</div>
+				</center>
+			</div>
+			<br>
+	</div>
+</div>

@@ -21,6 +21,7 @@ def page(request):
 def getStatistics(app_db_mapping, app_retrieval_freq):
     dict_stats = dict()
     for appName in app_db_mapping:
+        print('appName: ', appName)
         # dict['dbName'] = dict{orgnaismName => {val}, }
         dict_stats[appName] = dict()
         appClass = __import__(appName + ".models")

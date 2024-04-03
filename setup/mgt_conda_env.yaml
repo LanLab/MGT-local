@@ -14,16 +14,17 @@ dependencies:
   - mafft
   - psycopg2=2.8
   - dateparser=1.1.1
-  - django=3.2
+  - django=4.1.7
   - requests=2.27
   - kma
   - pyparsing
   - pip
   - geopy
+  - sistr_cmd
   - pip:
-    - sistr_cmd
     - django-countries
     - django-registration
     - django-tables2
     - djangorestframework
     - pycountry-convert
+    - django-extensions

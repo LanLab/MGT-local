@@ -26,6 +26,7 @@ def genDefs(projectPath, projectName, appName, fn_tablesInfo,settingpath):
 def genCcCode(orgAppClass, fn_tablesInfo,settingpath):
 
 	# sys.stdout.write("h")
+	# print('fn_tablesInfo: ', fn_tablesInfo)
 	with open(fn_tablesInfo, 'r') as fh_:
 
 		for line in fh_:

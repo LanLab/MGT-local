@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -21,18 +22,19 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DEFAULT_AUTO_FIELD='django.db.models.AutoField'
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '' #CHANGE add random string
+SECRET_KEY = '' # CHANGE to new secret key 
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['0.0.0.0', 'localhost', '127.0.0.1', '[::1]', '*']
+# 'DJANGO_ALLOWED_HOSTS' should be a single string of hosts with a space between each.
+# For example: 'DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]'
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', '0.0.0.0', '[::1]', '*']
 
 INSTALLED_APPS = [
+    'Clawclip', # CHANGE add new databases to this list. 
     'django_tables2',
     'Home',
-    'Blankdb', #change this to new database app name (normally capitalised first letter)
+    'MGTdb_shared',
     'django.contrib.auth',
     'django.contrib.admin',
     'django.contrib.contenttypes',
@@ -42,6 +44,7 @@ INSTALLED_APPS = [
 	'rest_framework',
 	'django_registration',
 	'django_countries',
+    'django_extensions',
 ]
 
 MIDDLEWARE = [
@@ -54,7 +57,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'Mgt.urls_template' # CHANGE to new urls filename
+ROOT_URLCONF = 'Mgt.urls_template' 
 
 TEMPLATES = [
     {
@@ -73,6 +76,14 @@ TEMPLATES = [
     },
 ]
 
+TEMPLATE_DEBUG = True
+
+TEMPLATE_LOADERS = (
+    'django.template.loaders.app_directories.load_template_source',
+)
+
+MANAGEMENT_COMMANDS = ['Mgt.management.commands.show_urls']
+
 # MY_URL = "http://mgtdb.unsw.edu.au"
 MY_URL = "http://127.0.0.1:8000"
 WSGI_APPLICATION = 'Mgt.wsgi.application'
@@ -84,28 +95,38 @@ FILE_UPLOAD_DIRECTORY_PERMISSIONS=0o774
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
 # 2018, Jan 9 - require a db router (if multiple databases)
-NCBI_RETRIEVAL_FREQUENCY = {'Blankdb': None} # CHANGE
+NCBI_RETRIEVAL_FREQUENCY = {'Clawclip': None} # CHANGE to frequency of retrieval
 
 DATABASE_ROUTERS = ['Mgt.router.GenericRouter']
-APPS_DATABASE_MAPPING = {'Blankdb': 'blankdb'} #CHANGE change to appname in INSTALLED_APPS and database DATABASES in name normally upper and lowercase first letter i.e. Salmonella and salmonella
+APPS_DATABASE_MAPPING = {'Clawclip':'clawclip' } #CHANGE change to appname in INSTALLED_APPS and database DATABASES in name normally upper and lowercase first letter i.e. Salmonella and salmonella
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'HOST': '0.0.0.0',
-        'PORT': '5432',
-        'USER': 'blankuser', #CHANGE add postgres user
-        'PASSWORD': 'blankpassword', #CHANGE add postgres password
+        "ENGINE": "django.db.backends.postgresql",
+        "USER": 'blankuser', 
+        "PASSWORD": 'blankpassword',
+        "HOST": "0.0.0.0",
+        "PORT": "5432",
         'NAME': 'default',
     },
-    'blankdb': { #CHANGE postgres database name
-        'ENGINE': 'django.db.backends.postgresql',
-        'HOST': '0.0.0.0',
-        'PORT': '5432',
-        'USER': 'blankuser', #CHANGE add postgres user
-        'PASSWORD': 'blankpassword', #CHANGE add postgres password
-        'NAME': 'blankdb',#CHANGE to new database name
-    }
+    ## Database configuration example 
+    # # 'blankdb': { # CHANGE postgres database name
+    # #     'ENGINE': 'django.db.backends.postgresql',
+    # #     'HOST': '0.0.0.0',
+    # #     'PORT': '5432',
+    # #     'USER': 'blankuser', #CHANGE add postgres user
+    # #     'PASSWORD': 'blankpassword', #CHANGE add postgres password
+    # #     'NAME': 'blankdb',#CHANGE to new database name
+    # # },
+    ## Clawclip example 
+    'clawclip': {
+        "ENGINE": "django.db.backends.postgresql",
+        "USER": 'blankuser',
+        "PASSWORD": 'blankpassword',
+        "HOST": "0.0.0.0",
+        "PORT": "5432",
+        'NAME': 'clawclip',
+    },
 }
 
 NONLOCALHOST='0.0.0.0' # leave as 0.0.0.0 for local install
@@ -142,19 +163,22 @@ LOGIN_REDIRECT_URL = '/'
 
 
 #RELATIVE PATHS FROM folder containing manage.py in this repo to folder on your system
-SUBDIR_REFERENCES = './../../../../References/' #CHANGE location where reference genomes will be stored
-SUBDIR_ALLELES = './../../../../Alleles/' #CHANGE location where allele sequences for the database will be stored
-MEDIA_ROOT = './../../../../Uploads/'#CHANGE location where uploaded reads/allele files will be stored
-BLASTALLELES='./../../../../species_specific_alleles/'#CHANGE location where initial allele sequences will be stored for read2allele
+# NOTE: Please move the data folders to a secure location once setup is complete.  
+SUBDIR_REFERENCES = '.data/References/' 
+SUBDIR_ALLELES = '.data/Alleles/' 
+MEDIA_ROOT = '.data/Uploads/'
+BLASTALLELES='.data/species_specific_alleles/'
 
 # ABSOLUTE PATH VERSIONS OF ABOVE
-ABS_SUBDIR_REFERENCES = '/path/to/References/' #CHANGE location where reference genomes will be stored
-ABS_SUBDIR_ALLELES = '/path/to/Alleles/' #CHANGE location where allele sequences for the database will be stored
-ABS_MEDIA_ROOT = "/path/to/Uploads/" #CHANGE location where uploaded reads/allele files will be stored
-ABS_BLASTALLELES='/path/to/species_specific_alleles/'#CHANGE location where initial allele sequences will be stored for read2allele
+ABS_SUBDIR_REFERENCES = 'data/References/'
+ABS_SUBDIR_ALLELES = 'data/Alleles/' 
+ABS_MEDIA_ROOT = "data/Uploads/" 
+ABS_BLASTALLELES='data/species_specific_alleles/'
 
-FILES_FOR_DOWNLOAD = "/Path/to/folder/files_for_download"#CHANGE replace path with storage location of allele and profile collections
-TMPFOLDER = "/Path/to/folder/tmp_files/"#CHANGE replace path with tmp specified in setup script
+FILES_FOR_DOWNLOAD = "data/files_for_download/"
+TMPFOLDER = "data/tmp_files/"
+
+
 
 ASCPKEY = "/Path/to/.aspera/connect/etc/asperaweb_id_dsa.openssh"#CHANGE ONLY NEEDED IF RUNNING cron_pipeline --dl_reads
 
@@ -165,6 +189,10 @@ KATANA_LOCATION=''
 TESTDB="True"
 KATANA_SETTINGS=''
 ##############################
+
+if DEBUG:
+    import mimetypes
+    mimetypes.add_type("application/javascript", ".js", True)
 
 #CHANGE BELOW TO list species specific cutoffs/values
 SPECIES_SEROVAR = {'Blankdb': {"species":'Blank species',
@@ -204,3 +232,5 @@ DATE_FORMAT = 'Y-m-d'
 
 STATIC_URL = '/static/'
 STATIC_ROOT = 'Static/'
+
+RAWQUERIES_DISPLAY = {'Clawclip': '', } # CHANGE for extra queries in database but keep string empty if using default (i.e, 'Salmonella': '')

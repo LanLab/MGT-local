@@ -1,0 +1,31 @@
+{% extends 'Templates/base.html' %}
+
+{% block head_static %}
+{% load static %}
+<script src="{% static 'MGTdb_shared/javascript/isolateCreateEdit.js' %}"></script>
+<script src="{% static 'MGTdb_shared/javascript/theDatePicker.js' %}"></script>
+<script src="{% static 'MGTdb_shared/javascript/helps.js' %}"></script>
+<link rel="stylesheet" type="text/css" href="{% static 'MGTdb_shared/css/isolateCreateEdit.css' %}">
+
+
+{% endblock %}
+
+{% block title_local %}
+Create new isolate
+{% endblock %}
+
+{% block body_local %}
+<div class="container-fluid">
+	<br> 
+	Dear User, <br><br>
+
+	<p> 
+	This page is temporarily displayed, while our data-processing servers are undergoing scheduled maintaince. During this time, we are unable to recieve any isolates and process them. <i>We apologize for the inconvenience.</i> </p>
+	
+	Apart from sequence-data upload and MGT assignment, other features of the website are available as usual.
+
+	<br> 
+</div>
+
+
+{% endblock %}

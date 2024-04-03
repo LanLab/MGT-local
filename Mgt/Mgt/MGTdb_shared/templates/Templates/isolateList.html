@@ -1,0 +1,109 @@
+{% extends 'Templates/base.html' %}
+{% block title_local %}
+All isolates
+{% endblock %}
+
+{% block navSec-allIso %} <a class="navSecond nav-link active" href="{% url organism|stringformat:'s:isolate_list' %}"> All isolates </a> {% endblock %}
+
+{% load static %}
+{% block head_static %}
+
+
+<script type="module" src="{% static 'MGTdb_shared/javascript/isolateList.js' %}"></script>
+
+<link rel="stylesheet" href="{% static 'MGTdb_shared/css/graph_timeOrLocStCount.css' %}">
+<script src="{% static 'MGTdb_shared/javascript/simpleHelpers.js' %}"></script>
+
+<script src="{% static 'MGTdb_shared/javascript/helps.js' %}"></script>
+
+<link rel="stylesheet" href="{% static 'MGTdb_shared/css/isoViewComb.css' %}">
+<link rel="stylesheet" href="{% static 'MGTdb_shared/css/index.css' %}">
+<link rel="stylesheet" href="{% static 'MGTdb_shared/css/isolateTable.css' %}">
+<link rel="stylesheet" href="{% static 'MGTdb_shared/css/graphicalView.css' %}">
+
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.2.0/jspdf.umd.min.js"></script>
+
+{% endblock %}
+
+
+{% block body_local %}
+{% load common %}
+
+
+
+<div class="m-2">
+<script type="text/javascript">
+
+	// import {doApLayout} from '{% static "layoutApCcTable" %}';
+
+
+
+	$(document).ready(function() {
+
+		bindEnterToSearch("filterIsolates");
+
+		// needs to be here for back to work. (because of history.pushstate).
+		$(window).on("popstate", function(e) {
+			   if (e.originalEvent.state !== null) {
+			   location.reload();
+			   }
+		 });
+		//doApLayout( JSON.parse('{{ isolates|escapejs }}'), 0, 1, JSON.parse('{{ request.session.apInfo|escapejs}}'), JSON.parse('{{ request.session.epiInfo|safe }}'));
+		$('#isolateTable').hide();
+
+		// console.log(window.location.search);
+
+		let isAnyRowForSearchAdded = handleBackPage({{dirColsInfo|safe}}, {{dirAps|safe}}, {{dirCcs|safe}}, {{serverStatusChoices|safe}}, {{assignStatusChoices|safe}}, {{privStatusChoices|safe}}, {{boolChoices|safe}});
+
+		if (isAnyRowForSearchAdded == true){ // get the searched data!
+			sortElemsAndSend('{% url organism|stringformat:'s:search_isolateList' %}', 'theSearchTbl', {{dirColsInfo|safe}}, {{dirAps|safe}}, {{dirCcs|safe}}, {{serverStatusChoices|safe}}, {{assignStatusChoices|safe}}, {{privStatusChoices|safe}});
+
+		}
+		else if (isAnyRowForSearchAdded == false){ // url-search not present; add empty row in filter table & load initial data.
+			addRowToFilterTbl("theSearchTbl", {{dirColsInfo|safe}}, {{dirAps|safe}}, {{dirCcs|safe}}, {{serverStatusChoices|safe}}, {{assignStatusChoices|safe}}, {{privStatusChoices|safe}}, null, null, {{boolChoices|safe}});
+			getInitialData('{% url organism|stringformat:'s:initial_isolates' %}', null,null,null,null, null);
+
+			// getInitialData (... )
+			// console.log("document ready!, call ajax to load and get data.");
+
+
+		}
+	});
+
+</script>
+
+
+
+<br>
+<div class="mx-auto" style="width: 200px;">
+	<h2 class="headingSpe"> All isolates </h2>
+</div>
+
+<script>
+$( function() {
+  $( "#datepicker" ).datepicker();
+} );
+</script>
+
+{% include 'Templates/filterIsolates.html' %}
+
+<br>
+<br>
+<br>
+
+<h3> List of isolates </h3>
+
+<div id="ajaxSearching">
+	<p> Searching . . . please wait. </p>
+</div>
+
+
+<div id="wrapper">
+	{% include 'Templates/isolateTable.html' %}
+</div>
+
+	{% include 'Templates/modal.html' %}
+
+</div>
+{% endblock %}
