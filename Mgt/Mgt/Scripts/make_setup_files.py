@@ -420,6 +420,10 @@ def make_db_folders(settings,args):
                       settings.TMPFOLDER+"/"+args.appname+"/outfiles",
                       settings.TMPFOLDER+"/"+args.appname+"/fastq_tmp"]
     for folder in folderstocheck:
+        dirname = "/".join(folder.split("/")[:-1])
+        if not os.path.exists(dirname):
+            print("created folder: {}".format(dirname))
+            os.mkdir(dirname)
         if not os.path.exists(folder):
             print("created folder: {}".format(folder))
             os.mkdir(folder)

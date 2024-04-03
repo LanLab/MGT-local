@@ -8,9 +8,13 @@ import glob
 from os import path
 import os
 import shutil
+import psutil
 import uuid
 
 import importlib.util
+
+# sys.path.insert(0, '/opt/pbs/lib/python/altair')
+# import pbs_ifl
 
 
 # print(sys.path)
@@ -19,8 +23,6 @@ import importlib.util
 from bioentrezMetadataGet import metadl_main
 
 from addIsolates import addInfo
-# from bpAntigens_cron import bp_antigen_calling
-# from bp_eryth_res import bp_eryth_res
 
 
 
@@ -167,6 +169,7 @@ def ncbi_dl(ids,args):
             path2 = "/vol1/fastq/" + id[:6] + "/" + id[-3:] + "/" + id + "/" + id + "_2.fastq.gz"
         else:
             print("SRA ID {} not length 9,10,11 or 12:".format(id))
+            continue
         dlpaths.write(path1 + "\n")
         dlpaths.write(path2 + "\n")
     dlpaths.close()
@@ -177,13 +180,14 @@ def ncbi_dl(ids,args):
     key = args.ascpkey
     dlstring = "ascp -k1 -T -l 100m -P33001 -i {} --mode=recv --user=era-fasp --host=fasp.sra.ebi.ac.uk --file-list={} {}".format(key,dlpathfile,args.readsfolder)
     
-    print(dlstring)
+    # print(dlstring)
 
     res = subprocess.run(dlstring.split(" "), capture_output=True)
     out = res.stdout
+    # proc = subprocess.Popen(dlstring, shell=True).wait()
 
     os.remove(dlpathfile)
-
+    # proc.terminate()
 
 def download_reads(args,conn):
 
@@ -291,7 +295,7 @@ def generate_commands_local(scriptpath,refalleles,readsets,assembliesfolder,args
 
     serotyping = ""
     if args.species == "Salmonella enterica":
-        serotype = "--serotype " + args.serotype.replace(" or ", ";") + " "
+        serotype = f""" --serotype "{args.serotype.replace(" or ", ";")}" """
         serotyping = " --serotyping"
     else:
         serotyping = ""
@@ -339,7 +343,7 @@ def generate_commands_local(scriptpath,refalleles,readsets,assembliesfolder,args
 def generate_commands_katana(scriptpath,refalleles,readfolder,assembliesfolder,args,uid,single):
 
     if args.species == "Salmonella enterica":
-        serotype = "--serotype " + args.serotype.replace(" or ", ";") + " "
+        serotype = f""" --serotype "{args.serotype.replace(" or ", ";")}" """
         serotyping = " --serotyping"
     else:
         serotyping = ""
@@ -347,7 +351,7 @@ def generate_commands_katana(scriptpath,refalleles,readfolder,assembliesfolder,a
 
     pbstemplate = """#!/bin/bash
 #PBS -N {app}{test}R2A
-#PBS -l nodes=1:ppn=1
+#PBS -l select=1:ncpus={threads}
 #PBS -l mem=30gb
 #PBS -l walltime=11:59:00
 
@@ -385,7 +389,7 @@ mem=16
 
 sleep $((RANDOM % 5))
 
-python {scriptpath} -i $f1,$f2 --intype reads -o $OUTPUT"/" -f -m 20 -t 1 --kraken_db {krakendb} --refalleles {refalleles} --species "{species}" {serotype}--min_largest_contig {min_largest_contig} --max_contig_no {max_contig_no} --n50_min {n50_min} --genome_min {genome_min} --genome_max {genome_max} --hspident {hspident} --locusnlimit {locusnlimit} --snpwindow {snpwindow} --densitylim {densitylim} --refsize {refsize} --blastident {blastident}{nosero}     
+python {scriptpath} -i $f1,$f2 --intype reads -o $OUTPUT"/" -f -m 20 -t {threads} --kraken_db {krakendb} --refalleles {refalleles} --species "{species}" {serotype}--min_largest_contig {min_largest_contig} --max_contig_no {max_contig_no} --n50_min {n50_min} --genome_min {genome_min} --genome_max {genome_max} --hspident {hspident} --locusnlimit {locusnlimit} --snpwindow {snpwindow} --densitylim {densitylim} --refsize {refsize} --blastident {blastident}{nosero}     
     """.format(
         app=str(args.appname)[:3],
         scriptpath=scriptpath,
@@ -405,7 +409,8 @@ python {scriptpath} -i $f1,$f2 --intype reads -o $OUTPUT"/" -f -m 20 -t 1 --krak
         densitylim = args.densitylim,
         refsize = args.refsize,
         blastident = args.blastident,
-        nosero = serotyping)
+        nosero = serotyping,
+        threads=args.threads)
 
     pbsfile = args.tmpfolder+"/"+uid+"_read_to_allele.pbs"
 
@@ -421,7 +426,7 @@ mkdir -p $OUTPUT
 mkdir -p $OUTPUT"/oe_files"
 cd $OUTPUT"/oe_files"
 
-FP="{fqFolder}/*_1.fastq.gz";FILES=($FP);arrayno=${{#FILES[@]}};let arrayno=$arrayno-1;qsub -v FILES=$FP,OUTPUT=$OUTPUT {pbs}
+FP="{fqFolder}/*_1.fastq.gz";FILES=($FP);arrayno=${{#FILES[@]}};let arrayno=$arrayno-1;qsub -v PROJECT=,FILES=$FP,OUTPUT=$OUTPUT {pbs}
         """.format(tmp=assembliesfolder, fqFolder=readfolder, pbs=pbsfile)
     else:
         sshtemplate = """OUTPUT={tmp}
@@ -430,7 +435,7 @@ mkdir -p $OUTPUT
 mkdir -p $OUTPUT"/oe_files"
 cd $OUTPUT"/oe_files"
     
-FP="{fqFolder}/*_1.fastq.gz";FILES=($FP);arrayno=${{#FILES[@]}};let arrayno=$arrayno-1;qsub -v FILES=$FP,OUTPUT=$OUTPUT -J 0-$arrayno {pbs}
+FP="{fqFolder}/*_1.fastq.gz";FILES=($FP);arrayno=${{#FILES[@]}};let arrayno=$arrayno-1;qsub -v PROJECT=,FILES=$FP,OUTPUT=$OUTPUT -J 0-$arrayno {pbs}
         """.format(tmp=assembliesfolder,fqFolder=readfolder,pbs=pbsfile)
 
     return pbsfile,sshtemplate
@@ -438,7 +443,7 @@ FP="{fqFolder}/*_1.fastq.gz";FILES=($FP);arrayno=${{#FILES[@]}};let arrayno=$arr
 
 def generate_commands_katana_genome(scriptpath, refalleles, readfolder, assembliesfolder, args, uid, single):
     if args.species == "Salmonella enterica":
-        serotype = "--serotype " + args.serotype.replace(" or ", ";") + " "
+        serotype = f""" --serotype "{args.serotype.replace(" or ", ";")}" """
         serotyping = " --serotyping"
     else:
         serotyping = ""
@@ -446,7 +451,7 @@ def generate_commands_katana_genome(scriptpath, refalleles, readfolder, assembli
     #TODO conda env as a variable
     pbstemplate = """#!/bin/bash
 #PBS -N {app}{test}R2A
-#PBS -l nodes=1:ppn=1
+#PBS -l select=1:ncpus={threads}
 #PBS -l mem=30gb
 #PBS -l walltime=11:59:00
 
@@ -474,7 +479,7 @@ mem=16
 
 sleep $((RANDOM % 5))
 
-python {scriptpath} -i $genome --intype genome -o $OUTPUT"/" -f -m 20 -t 1 --kraken_db {krakendb} --refalleles {refalleles} --species "{species}" {serotype}--min_largest_contig {min_largest_contig} --max_contig_no {max_contig_no} --n50_min {n50_min} --genome_min {genome_min} --genome_max {genome_max} --hspident {hspident} --locusnlimit {locusnlimit} --snpwindow {snpwindow} --densitylim {densitylim} --refsize {refsize} --blastident {blastident}{nosero}     
+python {scriptpath} -i $genome --intype genome -o $OUTPUT"/" -f -m 20 -t {threads} --kraken_db {krakendb} --refalleles {refalleles} --species "{species}" {serotype}--min_largest_contig {min_largest_contig} --max_contig_no {max_contig_no} --n50_min {n50_min} --genome_min {genome_min} --genome_max {genome_max} --hspident {hspident} --locusnlimit {locusnlimit} --snpwindow {snpwindow} --densitylim {densitylim} --refsize {refsize} --blastident {blastident}{nosero}     
     """.format(
         app=str(args.appname)[:3],
         scriptpath=scriptpath,
@@ -494,7 +499,8 @@ python {scriptpath} -i $genome --intype genome -o $OUTPUT"/" -f -m 20 -t 1 --kra
         densitylim=args.densitylim,
         refsize=args.refsize,
         blastident=args.blastident,
-        nosero=serotyping)
+        nosero=serotyping,
+        threads=args.threads)
 
     pbsfile = args.tmpfolder + "/" + uid + "_read_to_allele.pbs"
 
@@ -509,7 +515,7 @@ mkdir -p $OUTPUT
 mkdir -p $OUTPUT"/oe_files"
 cd $OUTPUT"/oe_files"
 
-FP="{tmp}/*.fasta";FILES=($FP);arrayno=${{#FILES[@]}};let arrayno=$arrayno-1;qsub -v FILES=$FP,OUTPUT=$OUTPUT {pbs}
+FP="{tmp}/*.fasta";FILES=($FP);arrayno=${{#FILES[@]}};let arrayno=$arrayno-1;qsub -v PROJECT=,FILES=$FP,OUTPUT=$OUTPUT {pbs}
         """.format(tmp=assembliesfolder, pbs=pbsfile)
     else:
         sshtemplate = """OUTPUT={tmp}
@@ -518,7 +524,7 @@ mkdir -p $OUTPUT
 mkdir -p $OUTPUT"/oe_files"
 cd $OUTPUT"/oe_files"
 
-FP="{tmp}/*.fasta";FILES=($FP);arrayno=${{#FILES[@]}};let arrayno=$arrayno-1;qsub -v FILES=$FP,OUTPUT=$OUTPUT -J 0-$arrayno {pbs}
+FP="{tmp}/*.fasta";FILES=($FP);arrayno=${{#FILES[@]}};let arrayno=$arrayno-1;qsub -v PROJECT=,FILES=$FP,OUTPUT=$OUTPUT -J 0-$arrayno {pbs}
         """.format(tmp=assembliesfolder, pbs=pbsfile)
 
     return pbsfile, sshtemplate
@@ -555,26 +561,48 @@ def make_assemout_folder(args,uid):
 
 def wait_till_finished(jobid):
     sl(30)
+    c=30
     while True:
+        con = pbs_ifl.pbs_connect('kman')
+        r = pbs_ifl.pbs_statjob(con, None, None, None)
 
-        proc = subprocess.Popen("qstat -t", shell=True,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-
-        out, err = proc.communicate()
-
-        ids = []
         inlist = False
-        for line in out.splitlines():
-            line = line.decode('utf8')
-            status = line.split()[-2]
-            if jobid in line and status not in ["X","C"]:
+        while r:
+            listjobid=r.name.split(".")[0].split("[")[0]
+            if jobid in listjobid:
                 inlist = True
-        # print(ids)
+            r = r.next
+
+        pbs_ifl.pbs_statfree(r)
+        pbs_ifl.pbs_disconnect(con)
+
         if not inlist:
             break
-
         sl(10)
+        print("still_running",c)
+        c+=10
+
+        # proc = subprocess.Popen("qstat -t", shell=True,
+        #                         stdout=subprocess.PIPE,
+        #                         stderr=subprocess.PIPE)
+        # res = subprocess.run(["qstat","-t"],capture_output=True)
+        # out = res.stdout
+        # #
+        # # out, err = proc.communicate()
+        #
+        # ids = []
+        # inlist = False
+        # for line in out.splitlines():
+        #     line = line.decode('utf8')
+        #     status = line.split()[-2]
+        #     if jobid in line and status not in ["X","C"]:
+        #         inlist = True
+        # # print(ids)
+        # # proc.terminate()
+        # if not inlist:
+        #     break
+        #
+        # sl(10)
 
 def update_status(newstatus,args,conn,ids,field):
 
@@ -612,7 +640,7 @@ def check_r2al_outcomes(args,ids,conn,assemOutFolder,readlocs,id2projid,id2user,
     #     uploadlocation = "/" + uploadlocation
 
     for id in ids:
-        print(id)
+        # print(id)
         strainfolder = assemOutFolder + "/" + id
         if os.path.exists(strainfolder):
 
@@ -655,6 +683,11 @@ def check_r2al_outcomes(args,ids,conn,assemOutFolder,readlocs,id2projid,id2user,
                     shutil.copyfile(failure, uploadlocation + isolatebase)
                 update_status(failreason, args, conn, [id], "assignment_status")
                 update_status("C", args, conn, [id], "server_status")
+                if projid2projname[strainProject] == "ENA-SRA":
+                    os.remove(readlocs[id][0])
+                    os.remove(readlocs[id][1])
+                    update_status_NULL(args, conn, [id], "file_forward")
+                    update_status_NULL(args, conn, [id], "file_reverse")
                 #TODO decide what to do with files for failed filters
 
             else:
@@ -689,11 +722,15 @@ def run_reads_to_alleles(args,conn):
     :return:
     """
 
-
+    c=0
+    # print(c)
+    c+=1
     if args.local:
+        wait_for_previous_read2db_local(args)
         folder = path.dirname(path.dirname(path.abspath(__file__)))
         r2alPath = folder + "/MGT_processing/Reads2MGTAlleles/reads_to_alleles.py"
     else:
+        wait_for_previous_read2db(args)
         r2alPath = args.katanalocal + "/Mgt/Mgt/MGT_processing/Reads2MGTAlleles/reads_to_alleles.py"
 
 
@@ -745,17 +782,23 @@ def run_reads_to_alleles(args,conn):
     if args.local:
         lsofls = chunks(ids, 200)
     else:
-        lsofls = chunks(ids,200)
+        if len(ids) < 800:
+            lsofls = [ids]
+        else:
+            lsofls = [ids[:800]]
+        # lsofls = chunks(ids,800)
+        # lsofls = [lsofls[0]]
 
     uid=str(uuid.uuid1())
 
     assembliesfolder = make_assemout_folder(args,uid)
-
+    # print(c)
+    c+=1
     for sublist in lsofls:
 
         update_status("R", args, conn, sublist, "server_status")
 
-        print(sublist)
+        # print(sublist)
 
 
         if genomeinput:
@@ -793,8 +836,8 @@ def run_reads_to_alleles(args,conn):
                 else:
                     if set[2] != None and set[2] != "":
                         assem = uploadlocation + set[2]
-                        print(set)
-                        print(assem)
+                        # print(set)
+                        # print(assem)
                         if not path.exists(assem):
                             print("genome file missing for strain {} with id {} at location {}".format(identifier,id,assem))
                             continue
@@ -807,7 +850,8 @@ def run_reads_to_alleles(args,conn):
                         print(set)
 
         else:
-            #NOTE make genome inpput version for katana
+            # print(c)
+            c += 1
             readsfolder = make_reads_folder(args, uid)
             for set in fileres:
                 id=str(set[0])
@@ -852,14 +896,14 @@ def run_reads_to_alleles(args,conn):
                 else:
                     if set[2] != None and set[2] != "":
                         assem = uploadlocation + set[2]
-                        print(set)
-                        print(assem)
+                        # print(set)
+                        # print(assem)
                         if not path.exists(assem):
                             print("genome file missing for strain {} with id {} at location {}".format(identifier,id,assem))
                             continue
 
                         assemmod = assembliesfolder + "/" + id + ".fasta"
-                        shutil.move(assem,assemmod)
+                        shutil.copy2(assem,assemmod)
                         readlocs[id] = assemmod
                     else:
                         print(id, identifier, "assembly not specified in database".format())
@@ -873,13 +917,19 @@ def run_reads_to_alleles(args,conn):
             ##scriptpath,refalleles,readsets,assembliesfolder,args
             sshcmd = generate_commands_local(r2alPath,allelepos,readlocs,assembliesfolder,args,genomeinput)
 
+            # proc = subprocess.Popen(sshcmd, shell=True,
+            #                         stdout=subprocess.PIPE,
+            #                         stderr=subprocess.PIPE)
+            # out, err = proc.communicate()
             res = subprocess.run(sshcmd, shell=True, capture_output=True)
             out = res.stdout
             err = res.stderr
-
+            # proc.terminate()
             print(out.decode(), err.decode())
 
         else:
+            # print(c)
+            c += 1
             if genomeinput:
                 pbsfile, sshcmd = generate_commands_katana_genome(r2alPath, allelepos, readsfolder, assembliesfolder, args,
                                                            uid, single)
@@ -889,6 +939,9 @@ def run_reads_to_alleles(args,conn):
 
             res = subprocess.run(sshcmd, shell=True,capture_output=True)
             out = res.stdout
+            err = res.stderr
+            err = err.decode('utf8')
+            print(err)
             jobid = out.decode('utf8')
             print(jobid)
             jobid = jobid.splitlines()[-1].split(".")[0].split("[")[0]
@@ -899,46 +952,91 @@ def run_reads_to_alleles(args,conn):
 
         strainsWithAlleles = check_r2al_outcomes(args,sublist,conn,assembliesfolder,readlocs,id2projid,id2user,projid2projname)
 
-        # print(out,err)
-        # if not args.local:
-        #     os.remove(pbsfile)
-        #     shutil.rmtree(readsfolder)
-        # else:
-        #     shutil.rmtree(readsfolder)
+        if not args.local:
+            os.remove(pbsfile)
+            shutil.rmtree(readsfolder)
+        else:
+            shutil.rmtree(readsfolder)
 
         print("{} of {} isolates in this sublist were successfully processed for alleles".format(len(strainsWithAlleles),len(sublist)))
 
     # shutil.rmtree(assembliesfolder)
 
 def wait_for_previous_Allele_to_db(args):
-    sl(10)
-    while True:
 
-        proc = subprocess.Popen("qstat -t", shell=True,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
+    # sl(10)
+    # while True:
+    # still_running_query = """ SELECT "id" FROM "{}_isolate" WHERE "server_status" = 'S'; """.format(
+    #     args.appname)  # NOTE add return of query flag here
+    # still_running_ids = sqlquery_to_outls(conn, still_running_query)
+    # if len(still_running_ids) > 0:
+    #     print("Previous allele_to_db still running")
+    #     print([x[0] for x in still_running_ids])
+    #     sys.exit(0)
 
-        out, err = proc.communicate()
 
-        ids = []
-        inlist = False
+    con = pbs_ifl.pbs_connect('kman')
+    r = pbs_ifl.pbs_statjob(con, None, None, None)
 
-        jobname = "{app}{test}A2M".format(app=str(args.appname)[:3],test=args.testdb)
+    jobname = "{app}{test}A2M".format(app=str(args.appname)[:3], test=args.testdb)
+    inlist = False
+    while r:
+        listjobid=r.attribs.value
+        if jobname == listjobid:
+            inlist = True
+            print("Previous allele_to_db still running")
+            sys.exit(0)
+        r = r.next
 
-        for line in out.splitlines():
+    pbs_ifl.pbs_statfree(r)
+    pbs_ifl.pbs_disconnect(con)
 
-            line = line.decode('utf8')
+def wait_for_previous_read2db(args):
+    jobname="{app}{test}R2A".format(app=str(args.appname)[:3],test=args.testdb)
+    res = subprocess.run(["qstat","-t"],capture_output=True)
+    out = res.stdout
 
-            status = line.split()[-2]
 
-            if jobname in line and status not in ["X", "C"]:
-                inlist = True
+    for line in out.splitlines():
+        line = line.decode('utf8')
+        status = line.split()[-2]
+        if jobname in line and status not in ["X","C"]:
+            sys.exit("Previous reads2alleles still running")
+
+    return False
+
+def wait_for_previous_Allele_to_db_local(args):
+    pid = os.getpid()
+    for _process in psutil.process_iter():
+        try:
+            # new_proc = _process.as_dict(attrs=["pid", "name", "cmdline"])
+            if _process.pid != pid:
+                command = _process.cmdline()
+            if "--allele_to_db" in command and args.appname in command:
                 sys.exit("Previous allele_to_db still running")
-        # print(ids)
-        if not inlist:
-            break
+        except psutil.NoSuchProcess:
+            continue
+        except psutil.ZombieProcess:
+            continue
+        except psutil.AccessDenied:
+            continue
 
-        sl(10)
+def wait_for_previous_read2db_local(args):
+    pid = os.getpid()
+    for _process in psutil.process_iter():
+        try:
+            # new_proc = _process.as_dict(attrs=["pid", "name", "cmdline"])
+            if _process.pid != pid:
+                command = _process.cmdline()
+            if "--reads_to_alleles" in command and args.appname in command:
+                    sys.exit("Previous allele_to_db still running")
+        except psutil.NoSuchProcess:
+            continue
+        except psutil.ZombieProcess:
+            continue
+        except psutil.AccessDenied:
+            continue
+
 
 def runAllele2Db(args,conn,alleleslocation):
 
@@ -997,6 +1095,8 @@ def runAllele2Db(args,conn,alleleslocation):
 
     if not args.local:
         wait_for_previous_Allele_to_db(args)
+    else:
+        wait_for_previous_Allele_to_db_local(args)
 
     uploadlocation = settings.ABS_MEDIA_ROOT
     # uploadlocation = get_abs_from_rel_and_abs(hard_media_root, args.projectPath) + "/"
@@ -1005,7 +1105,7 @@ def runAllele2Db(args,conn,alleleslocation):
     reads_query = """ SELECT "id","file_alleles","project_id","isQuery" FROM "{}_isolate" WHERE "server_status" in ('V'); """.format(args.appname) # NOTE add return of query flag here
     res = sqlquery_to_outls(conn,reads_query)
 
-    print(res)
+    # print(res)
 
     submission_subset_res = list([x for x in res if not x[3]])
     query_subset_res = list([x for x in res if x[3]])
@@ -1028,13 +1128,13 @@ def runAllele2Db(args,conn,alleleslocation):
         if not args.local:
             ids = ids[:100]
         else:
-            ids = ids[:100]
+            ids = ids[:500]
 
     alleles = list([x[1] for x in res if str(x[0]) in ids])
 
 
     id2projid = {str(x[0]): str(x[2]) for x in res if str(x[0]) in ids}
-    print(alleles)
+    # print(alleles)
 
     # in webiste upload location is determined by : settingslocation/AppName/userID/#/strainID
 
@@ -1068,11 +1168,14 @@ def runAllele2Db(args,conn,alleleslocation):
         # command += "source ~/.bash_profile\n"
         # command += "source ~/.bashrc\n"
         # command += "source ~/.zshrc\n"
-        command += "conda activate {conda_env}\n".format(conda_env=args.condaenv)
+        command += "conda activate {conda_env}\n".format(conda_env = args.condaenv)
         for f in alleles:
             ident = all2id[f]
             fullpath = uploadlocation + f
-            command += """python {scriptpath} {allelesfile} {appname} -s {settings} --apzerolim {apzero} -c -t none --project {mgtproj} --local --timing --id {ident}{nested}{query}\n""".format(allelesfile=fullpath,
+            if not os.path.exists(fullpath):
+                print(f"Strain id {ident} allele file not present at {fullpath}")
+            else:
+                command += """python {scriptpath} {allelesfile} {appname} -s {settings} --apzerolim {apzero} -c -t none --threads {threads} --project {mgtproj} --local --timing --id {ident}{nested}{query}\n""".format(allelesfile=fullpath,
                                                                                                                                                         scriptpath=al2dbpath,
                                                                                                                                                         appname=args.appname,
                                                                                                                                                         tmp=args.tmpfolder,
@@ -1081,9 +1184,9 @@ def runAllele2Db(args,conn,alleleslocation):
                                                                                                                                                         apzero=args.apzero,
                                                                                                                                                         ident=ident,
                                                                                                                                                         nested=nestedcall,
-                                                                                                                                                        query=q)
+                                                                                                                                                        query=q,
+                                                                                                                                                        threads=args.threads)
         command += '"'
-
         subprocess.run(command, shell=True)
         # with subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as sp:
         #     for line in sp.stdout:
@@ -1098,10 +1201,13 @@ def runAllele2Db(args,conn,alleleslocation):
             ident = all2id[f]
             f = uploadlocation + f
             destname = alleles_tmp + "/" + ident + "_alleles.fasta"
-            print("cp {} to {}".format(f,destname))
-            shutil.copyfile(f,destname)
+            if os.path.exists(f):
+                print("cp {} to {}".format(f,destname))
+                shutil.copyfile(f,destname)
+            else:
+                print(f"Strain id {ident} allele file not present at {f}")
 
-
+        katanasettings = args.katanalocal + "/Mgt/Mgt/Mgt/"+args.katanasettings + ".py"
 
         al2dbpath = args.katanalocal + "/Mgt/Mgt/MGT_processing/MgtAllele2Db/Allele_to_mgt_db.py"
 
@@ -1112,7 +1218,7 @@ def runAllele2Db(args,conn,alleleslocation):
 
         pbstemplate = """#!/bin/bash
 #PBS -N {app}{test}A2M
-#PBS -l nodes=1:ppn=4
+#PBS -l select=1:ncpus={threads}
 #PBS -l mem=30gb
 #PBS -l walltime=11:59:00
 #PBS -e {tmp}/error.txt
@@ -1123,18 +1229,21 @@ cd {tmp}
     
 source /srv/scratch/lanlab/michael/miniconda_newkatana/bin/activate mgtdbpaper
     
-for allelesfile in {allelesfolder}/*.fasta; do python {scriptpath} $allelesfile {appname} -s {settings} --timing --apzerolim {apzero} -c -t none --project {mgtproj} --timing{subset}{nested}{query}; done""".format(allelesfolder=alleles_tmp,
+for allelesfile in {allelesfolder}/*.fasta; do python {scriptpath} $allelesfile {appname} -s {settings} --timing --apzerolim {apzero} -c -t none --threads {threads} --project {mgtproj} --timing{subset}{nested}{query}; done
+rm -r {allelesfolder}
+""".format(allelesfolder=alleles_tmp,
                                                                                                                                                                             scriptpath=al2dbpath,
                                                                                                                                                                             appname=args.appname,
                                                                                                                                                                             tmp=args.tmpfolder,
                                                                                                                                                                             mgtproj=args.dbproject,
                                                                                                                                                                             app=str(args.appname)[:3],
-                                                                                                                                                                            settings=args.settings,
+                                                                                                                                                                            settings=katanasettings,
                                                                                                                                                                             apzero=args.apzero,
                                                                                                                                                                             test=args.testdb,
                                                                                                                                                                             subset=subset,
                                                                                                                                                                             nested=nestedcall,
-                                                                                                                                                                            query=q)
+                                                                                                                                                                            query=q,
+                                                                                                                                                                            threads=args.threads)
 
         pbsfile = args.tmpfolder + "/"+uid+"_allele_2_db.pbs"
 
@@ -1142,18 +1251,15 @@ for allelesfile in {allelesfolder}/*.fasta; do python {scriptpath} $allelesfile 
         pbs.write(pbstemplate)
         pbs.close()
 
-        proc = subprocess.Popen("qsub " + pbsfile, shell=True,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-        out, err = proc.communicate()
+        res = subprocess.run(["qsub","-v","PROJECT=",pbsfile],capture_output=True)
+        # our = subprocess.run("qsub -W block=true -v PROJECT= "+pbsfile+"; echo done",shell=True,capture_output=True)
+        out=res.stdout
+
 
         jobid = out.decode('utf8')
         print(jobid)
         jobid = jobid.splitlines()[-1].split(".")[0].split("[")[0]
 
-        # jobid = out.decode('utf8').splitlines()
-        # print(jobid)
-        # jobid = jobid[0].split(".")[0].split("[")[0]
 
         print("job submitted with ID: {}".format(jobid))
 
@@ -1162,24 +1268,24 @@ for allelesfile in {allelesfolder}/*.fasta; do python {scriptpath} $allelesfile 
         shutil.copyfile("{tmp}/error.txt".format(tmp=args.tmpfolder),"{tmp}/error_{uid}.txt".format(tmp=args.tmpfolder,uid=uid))
         shutil.copyfile("{tmp}/output.txt".format(tmp=args.tmpfolder),
                     "{tmp}/output_{uid}.txt".format(tmp=args.tmpfolder,uid=uid))
-        shutil.rmtree(alleles_tmp)
+        # shutil.rmtree(alleles_tmp)
         os.remove(pbsfile)
 
         print("finished processing")
 
-# def runSpeciesSpecific(args,conn,settings):
-#     if args.appname == "Pertussis":
-#         """
-#         run antigen typing
-#         if reads: run 23S typing
-#         """
-#         numrun = bp_antigen_calling(args,conn)
-#         print(f'antigen alleles called for {numrun} isolates')
-#         success,failed =bp_eryth_res(args,conn,settings)
-#         if len(failed) > 0:
-#             print(f'{",".join(failed)} isolates kma run failed')
-#         print(f'23s mutation (erythromycin res) called for {len(success)} isolates')
-#         print("Finished species specific analysis: {}".format(args.appname, datetime.datetime.now()))
+def runSpeciesSpecific(args,conn,settings):
+    if args.appname == "Pertussis":
+        """
+        run antigen typing 
+        if reads: run 23S typing
+        """
+        numrun = bp_antigen_calling(args,conn)
+        print(f'antigen alleles called for {numrun} isolates')
+        success,failed =bp_eryth_res(args,conn,settings)
+        if len(failed) > 0:
+            print(f'{",".join(failed)} isolates kma run failed')
+        print(f'23s mutation (erythromycin res) called for {len(success)} isolates')
+        print("Finished species specific analysis: {}".format(args.appname, datetime.datetime.now()))
 
 
 
@@ -1252,6 +1358,9 @@ def parseargs():
     parser.add_argument("--nestedsubsetting",
                         help="WARNING THIS WILL ONLY WORK FOR NESTED DESIGNS AND WILL BREAK CC AND ODC CALLS - ONLY USE FOR INCREASED SPEED IN large scheme calling",
                         action='store_true')
+    parser.add_argument("--threads",
+                        help="number of threads",
+                        default=1)
     localgroup = parser.add_argument_group("local MGT run options")
     localgroup.add_argument("--local",
                         help="run reads_to_alleles and allele_to_db on the local machine rather that submitting to HPC",
@@ -1357,7 +1466,7 @@ def main():
         if args.local:
             sys.exit("--species_specific only on mgtdb central server as it is specific to species located there")
         print("running {} specific analyses at: {}".format(args.appname,datetime.datetime.now()))
-        # runSpeciesSpecific(args,conn,settings)
+        runSpeciesSpecific(args,conn,settings)
 
     cleanup(args)
     return

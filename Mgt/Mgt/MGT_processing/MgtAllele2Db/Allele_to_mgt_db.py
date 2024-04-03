@@ -10,6 +10,8 @@ import importlib.util
 import re
 from operator import itemgetter
 from collections import OrderedDict
+from multiprocessing import Pool
+
 
 sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
 # print(path.dirname(path.dirname(path.dirname(path.dirname(path.abspath(__file__))))))
@@ -126,7 +128,8 @@ def get_min_scheme(connection, args):
 
 
 def get_allele_profile(connection, lev, NewPosAlleles, NewNegAlleles, Allloc, PosMatches, ZeroCallAlleles,
-                       no_tables, all_assignments, args, nodash_to_dash, start_time, ccb1="", ccb2="", ccsubsetlevs=()):
+                       no_tables, all_assignments, args, nodash_to_dash, start_time,posalleleseqs,negalleleseqs,
+                       ccb1="", ccb2="", ccsubsetlevs=()):
     """
 
     :param connection: sql connection
@@ -215,7 +218,8 @@ def get_allele_profile(connection, lev, NewPosAlleles, NewNegAlleles, Allloc, Po
     #  this will be needed for loci where positive allele wasn't in ref allele fasta in reads->alleles OR
     #  where the allele is negative
     #  OTHERWISE if no match assign new (st or dst)
-    profile, new_allele_outdict = match_or_assign_alleles(lev, NewPosAlleles, NewNegAlleles,profile, loci_list,no_tables, connection, args)
+    profile, new_allele_outdict,posalleleseqs,negalleleseqs = match_or_assign_alleles(lev, NewPosAlleles, NewNegAlleles,posalleleseqs,negalleleseqs,
+                                                          profile, loci_list,no_tables, connection, args)
 
     if args.timing:
         print("{} match and assign alleles".format(lev), (" --- %s seconds ---" % (time.time() - start_time)))
@@ -243,7 +247,7 @@ def get_allele_profile(connection, lev, NewPosAlleles, NewNegAlleles, Allloc, Po
         sys.exit("some loci are missing from profile: {}".format(",".join(missing)))
 
     else:
-        return profile, all_assignments, new_allele_outdict
+        return profile, all_assignments, new_allele_outdict,posalleleseqs,negalleleseqs
 
 
 def retrieve_alleles_to_compare(connection, lev, Allloc, loci_list, to_process, table_nos, args, nodash_to_dash,
@@ -446,12 +450,23 @@ def get_locus_allele_freqs_in_higher_cc(lev, ccb1, ccb2, to_process, locuslist, 
     for id in combined_res:
         # matching_st_ids.append(id)
         for pos in range(len(combined_locils)):
+            # print(id)
+            # print(pos)
+            # print(locuslist)
+
             loc = combined_locils[pos]
             loc = nodash_to_dash[loc]
+
+            # if loc == "STMMW_00761":
+            #     print(len(combined_res[id]))
+            #     print(pos)
+
             allele = combined_res[id][pos]  # get allele from sql output dict
             posallele = neg_to_pos(allele)  # convert allele to positive
             all_alleles[loc].append(allele)  # store original allele from sql out
             pos_alleles[loc].append(posallele)  # store positive version of original allele
+            # print(loc,posallele)
+            # sl(0.2)
 
     # matching_st_ids = list(set(matching_st_ids))
     # print("Level and matching sts",lev,len(matching_st_ids))
@@ -461,8 +476,13 @@ def get_locus_allele_freqs_in_higher_cc(lev, ccb1, ccb2, to_process, locuslist, 
 
     return all_alleles, pos_alleles, matching_st_ids
 
-def get_allele_seqs(args,conn,NewPosAlleles,NewNegAlleles,lev,table_nos):
+def get_allele_seqs(args,conn,NewPosAlleles,NewNegAlleles,posalleleseqs,negalleleseqs,lev,table_nos,loci_list):
+
+
+    time1 = time.time()
     loci_to_get = list(NewPosAlleles.keys()) + list(NewNegAlleles.keys())
+    loci_to_get = [x for x in loci_to_get if x in loci_list]
+    # print(loci_to_get)
     combined_locils = []
     loci_alleles = {}
 
@@ -471,28 +491,33 @@ def get_allele_seqs(args,conn,NewPosAlleles,NewNegAlleles,lev,table_nos):
 
     files = sqlquery_to_outls(conn, sqlcommand)
     files = {x[0]: "/" + x[1] for x in files}  # {locus name: fasta file path}
-    posallelesseqs = {}
-    negallelesseqs = {}
+    print("\t\tget_allele_seqs sql query".format(lev), (" --- %s seconds ---" % (time.time() - time1)))
+    time1 = time.time()
+    # posallelesseqs = {}
+    # negallelesseqs = {}
     for locus in files:
-        if ":" in files[locus]:
-            file = files[locus].split(":")[0] + ".fasta"
-        else:
-            file = files[locus]
-        # print(file)
-        if not path.exists(file):
-            sys.exit("{} allele file does not exist at {}".format(locus,file))
-        alleles = SeqIO.parse(file, "fasta")
-        posallelesseqs[locus] = {}
-        negallelesseqs[locus] = {}
-        for allele in alleles:
-            allelenumber = allele.id.split(":")[-1]
-            if "-" not in allelenumber:
-                posallelesseqs[locus][allelenumber] = str(allele.seq)
+        if locus not in posalleleseqs:
+            if ":" in files[locus]:
+                file = files[locus].split(":")[0] + ".fasta"
             else:
-                negallelesseqs[locus][allelenumber] = str(allele.seq)
-    return posallelesseqs,negallelesseqs
+                file = files[locus]
+            # print(file)
+            if not path.exists(file):
+                sys.exit("{} allele file does not exist at {}".format(locus,file))
+            alleles = SeqIO.parse(file, "fasta")
+            posalleleseqs[locus] = {}
+            negalleleseqs[locus] = {}
+            for allele in alleles:
+                allelenumber = allele.id.split(":")[-1]
+                if "-" not in allelenumber:
+                    posalleleseqs[locus][allelenumber] = str(allele.seq)
+                else:
+                    negalleleseqs[locus][allelenumber] = str(allele.seq)
+    print("\t\tget_allele_seqs loop".format(lev), (" --- %s seconds ---" % (time.time() - time1)))
 
-def match_or_assign_alleles(lev, NewPosAlleles, NewNegAlleles, assignments,
+    return posalleleseqs,negalleleseqs
+
+def match_or_assign_alleles(lev, NewPosAlleles, NewNegAlleles,posalleleseqs,negalleleseqs, assignments,
                             loci_list,no_tables, connection, args):
     """
     match any unmatched alleles to current db
@@ -512,11 +537,12 @@ def match_or_assign_alleles(lev, NewPosAlleles, NewNegAlleles, assignments,
     :return: assignments of alleles from input + details about any new alleles including SNPs etc
     """
     # Add exact matches to pos alleles to assignments and record novel positive alleles that need naming in newpos_todo
-
-    posalleles,negalleles = get_allele_seqs(args,connection,NewPosAlleles,NewNegAlleles,lev,no_tables)
-
     time1 = time.time()
-    assignments, newpos_todo = exactmatch(posalleles, NewPosAlleles, assignments, loci_list)
+    posalleleseqs,negalleleseqs = get_allele_seqs(args,connection,NewPosAlleles,NewNegAlleles,posalleleseqs,negalleleseqs,lev,no_tables,loci_list)
+    if args.timing:
+        print("\tget alleles".format(lev), (" --- %s seconds ---" % (time.time() - time1)))
+    time1 = time.time()
+    assignments, newpos_todo = exactmatch(posalleleseqs, NewPosAlleles, assignments, loci_list)
 
     if args.timing:
         print("\tassign_alleles_exact".format(lev), (" --- %s seconds ---" % (time.time() - time1)))
@@ -526,15 +552,19 @@ def match_or_assign_alleles(lev, NewPosAlleles, NewNegAlleles, assignments,
         # print(newpos_todo)
         return "newst",""
 
-    outcomes = get_negmatches_sql(posalleles,negalleles, NewNegAlleles, assignments, loci_list, newpos_todo,
+    outcomes = get_negmatches_sql(posalleleseqs,negalleleseqs, NewNegAlleles, assignments, loci_list, newpos_todo,
                                   args,connection)
+    # if lev == 2 or lev =="2":
+    #     print(outcomes)
     if args.timing:
         print("\tassign_alleles_negmatch".format(lev), (" --- %s seconds ---" % (time.time() - time1)))
     time1 = time.time()
     assignments, new_allele_outdict = sort_outcomes_and_assign(outcomes, assignments, connection, args)
+    # if lev == 2 or lev =="2":
+    #     print(assignments,new_allele_outdict)
     if args.timing:
         print("\tassign_alleles_all".format(lev), (" --- %s seconds ---" % (time.time() - time1)))
-    return assignments, new_allele_outdict
+    return assignments, new_allele_outdict,posalleleseqs,negalleleseqs
 
 
 ## ALLELE PROCESSING ###
@@ -555,6 +585,7 @@ def exactmatch(alleles, NewPosAlleles, assignments, loci_list):
     """
     newloci_todo = {}
     for locus in NewPosAlleles:
+        # print(locus)
         if locus not in assignments:
             if locus in loci_list:
                 for allele in alleles[locus]:
@@ -562,10 +593,37 @@ def exactmatch(alleles, NewPosAlleles, assignments, loci_list):
                         alleleseq = alleles[locus][allele]
                         if alleleseq == NewPosAlleles[locus]:
                             assignments[locus] = allele
+                            # print(locus,allele)
+                            # print("match",locus,allele)
                 if locus not in assignments:
                     newloci_todo[locus] = NewPosAlleles[locus]
+                # if locus == "STM1332_STMMW_13401":
+                #     print("exactmatch",locus,NewPosAlleles[locus])
+                #     sl(5)
+                # if locus == "STMMW_01521":
+                #     print(assignments[locus])
+                #     sl(10)
 
     return assignments, newloci_todo
+
+def get_muts_per_locus(newnegs,alleles,newseq,muts,matchallelelist):
+    #TODO only return newnegs if input alleles are negative (i.e. no matches to positive alleles)
+    match = False
+    for existlocus in alleles:
+        oldseq = str(alleles[existlocus])
+        if len(newseq) == len(oldseq):
+            anymut = 'no'
+            for pos in range(len(newseq)):
+                if newseq[pos] != oldseq[pos] and newseq[pos] not in ["N", "-"] and oldseq[pos] not in [
+                    "N", "-"]:
+                    anymut = 'yes'
+            if anymut == 'no':
+                if "-" not in existlocus:
+                    matchallelelist.append(existlocus)
+                allele = existlocus.split("_")[0].strip("-")
+                newnegs.append(("", allele, newseq, muts))
+                match = True
+    return newnegs,muts,matchallelelist,match
 
 def get_muts(newnegs,alleles,locus,newseq,muts,matchallelelist):
     #TODO only return newnegs if input alleles are negative (i.e. no matches to positive alleles)
@@ -586,6 +644,105 @@ def get_muts(newnegs,alleles,locus,newseq,muts,matchallelelist):
                 match = True
     return newnegs,muts,matchallelelist,match
 
+def newloctype(combined_todo,posalleles,negalleles,args):
+    muts = []
+    newnegs = []
+    newseq = str(combined_todo)
+    existing_allele_sizes = [len(posalleles[x]) for x in posalleles]
+    outcome = ()
+    if len(newseq) not in existing_allele_sizes:
+        outcome = ("new pos allele", "0", newseq, muts)
+
+    else:
+        matchallelelist = []
+        if args.appname not in ["Salmonella", "Enterica", "Vibrio"]:
+            oldseq = posalleles["1"]
+
+            #  Get SNPs from allele relative to "1"/ref allele
+            for pos in range(len(oldseq)):
+                if newseq[pos] != oldseq[pos] and newseq[pos] not in ["N", "-"] and oldseq[pos] not in ["N",
+                                                                                                        "-"]:
+                    muts.append((oldseq[pos], str(pos), newseq[pos]))
+                    # if locus == "STM0777":
+                    #     print(muts)
+            if args.printinfo:
+                print(muts)
+
+        #  For each existing allele in locus check for any SNPS relative to current locus
+        #  If no muts for a given allele then add to newnegs with that allele, the sequence and mutations to ref
+
+        mut_per_allele = {}
+
+        newnegs, muts, matchallelelist, posmatch = get_muts_per_locus(newnegs, posalleles, newseq, muts, matchallelelist)
+        if not posmatch:
+            newnegs, muts, matchallelelist, posmatch = get_muts_per_locus(newnegs, negalleles, newseq,
+                                                                muts, matchallelelist)
+        # for existlocus in alleles[locus]:
+        #     oldseq = str(alleles[locus][existlocus])
+        #     if len(newseq) == len(oldseq):
+        #         anymut = 'no'
+        #         for pos in range(len(newseq)):
+        #             if newseq[pos] != oldseq[pos] and newseq[pos] not in ["N", "-"] and oldseq[pos] not in [
+        #                 "N", "-"]:
+        #                 anymut = 'yes'
+        #         if anymut == 'no':
+        #             if "-" not in existlocus:
+        #                 matchallelelist.append(existlocus)
+        #             allele = existlocus.split("_")[0].strip("-")
+        #             newnegs.append(("", allele, newseq, muts))
+        #             mut_per_allele[existlocus] = anymut
+        # if locus == "STMMW_13971":
+        #     print(existlocus,anymut,muts)
+
+        ##check if neg match is contradicted by pos match to same allele and remove neg match if so.
+        nnewnegs = []
+        for match in newnegs:  # a match to a
+            if match[1] in posalleles:
+                if match[1] not in matchallelelist:
+                    pass
+                else:
+                    nnewnegs.append(match)
+
+        newnegs = list(nnewnegs)
+
+        if len(newnegs) == 0:  # if no matches to new allele
+            if "N" in newseq:  # if any missing data then call 0
+                ##call as 0
+                outcome = ("novel neg allele", "", newseq, muts)
+            else:  # if no missing data call new pos allele
+                outcome = ("novel pos allele", "", newseq, muts)
+        elif len(newnegs) == 1:  # if only one match
+            if "N" in newseq:  # if new allele is negative
+                allele = newnegs[0][1]
+                outcome = ("new neg allele", allele, newseq, muts)
+            else:
+                allele = newnegs[0][1]
+                #  new positive version of negative match allele (neg matches with other, non-matching pos allele are already removed)
+                outcome = ("new pos allele", allele, newseq, muts)
+        else:  # if more than one match to new allele
+            allele_hits = list(set([neg_to_pos(x[1]) for x in
+                                    newnegs]))  # Get set of positive versions of allele that match
+            if len(allele_hits) > 1:
+                if "N" in newseq:
+                    ## this means a negative allele matches 2 or more other alleles: call as 0
+                    ##check what other related sts have at this position (by higher CC) if any called with one that can match then assign otherwise 0
+                    allele = "0"
+                    #  new negative allele for allele assigned by check_locus_allele_freqs_in_higher_cc
+                    outcome = ("new neg allele", allele, newseq, muts)
+                else:
+                    ## check if negative matches have any pos allele associated if no then assign to neg number otherwise next pos
+                    outcome = check_locus_allele_freqs(posalleles, allele_hits, newseq, muts)
+            else:
+                if "N" in newseq:
+                    ##this means new allele is negative and only matches one other allele number (could be many neg +pos)
+                    allele = allele_hits[0]
+                    ##check what other related sts have at this position (by higher CC) if any called with one that can match then assign otherwise 0
+                    outcome = ("new neg allele", allele, newseq, muts)
+                else:
+                    ## if there is only one possible positive match and the matches are negative
+                    allele = neg_to_pos(newnegs[0][1])
+                    outcome = ("new pos allele", allele, newseq, muts)
+    return outcome
 
 def get_negmatches_sql(posalleles,negalleles, NewNegAlleles, assignments, loci_list, newloci_todo, args,conn):
     """
@@ -600,7 +757,7 @@ def get_negmatches_sql(posalleles,negalleles, NewNegAlleles, assignments, loci_l
     :param newloci_todo: dict of {locus:sequence of novel positive allele}
     :return: outcomes dictionary {locus:("type of allele assignment", possible matching allele (can be "" or 0), newseq, muts)}
     """
-
+    time2 = time.time()
     outcomes = {}
     done = []
 
@@ -626,113 +783,126 @@ def get_negmatches_sql(posalleles,negalleles, NewNegAlleles, assignments, loci_l
                         assignments[locus] = allele
                         done.append(locus)
 
+    print("\t\tget_negmatches_sql firstloop", (" --- %s seconds ---" % (time.time() - time2)))
+
     #  combine novel positive alleles with unmatched negative alleles for further processing
     combined_todo = dict(NewNegAlleles)
     for i in newloci_todo:
         combined_todo[i] = newloci_todo[i]
 
-    #  determine what type of new allele should be assigned loci in combined_todo
-    for locus in combined_todo:
-        if locus not in assignments:  # if locus not already assigned
-            if locus in loci_list:
-                if locus not in done:  # if locus not already assigned to exact negative match (i.e. in done list)
-                    muts = []
-                    newnegs = []
-                    newseq = str(combined_todo[locus])
-                    existing_allele_sizes = [len(posalleles[locus][x]) for x in posalleles[locus]]
+    locus_processing_list = [x for x in combined_todo if x not in assignments]
+    locus_processing_list = [x for x in locus_processing_list if x in loci_list]
+    locus_processing_list = [x for x in locus_processing_list if x not in done]
+    mpinputs = [(combined_todo[locus],posalleles[locus],negalleles[locus],args) for locus in locus_processing_list]
 
-                    if len(newseq) not in existing_allele_sizes:
-                        outcomes[str(locus)] = ("new pos allele", "0", newseq, muts)
-
-                    else:
-                        matchallelelist = []
-                        if args.appname not in ["Enterica","Vibrio"]:
-                            oldseq = posalleles[locus]["1"]
-
-                            #  Get SNPs from allele relative to "1"/ref allele
-                            for pos in range(len(oldseq)):
-                                if newseq[pos] != oldseq[pos] and newseq[pos] not in ["N", "-"] and oldseq[pos] not in ["N",
-                                                                                                                        "-"]:
-                                    muts.append((oldseq[pos], str(pos), newseq[pos]))
-                                    # if locus == "STM0777":
-                                    #     print(muts)
-                            if args.printinfo:
-                                print(muts)
-
-                        #  For each existing allele in locus check for any SNPS relative to current locus
-                        #  If no muts for a given allele then add to newnegs with that allele, the sequence and mutations to ref
-
-                        mut_per_allele = {}
-
-                        newnegs,muts,matchallelelist,posmatch = get_muts(newnegs,posalleles,locus,newseq,muts,matchallelelist)
-                        if not posmatch:
-                            newnegs, muts, matchallelelist, posmatch = get_muts(newnegs, negalleles, locus, newseq,
-                                                                                muts, matchallelelist)
-                        # for existlocus in alleles[locus]:
-                        #     oldseq = str(alleles[locus][existlocus])
-                        #     if len(newseq) == len(oldseq):
-                        #         anymut = 'no'
-                        #         for pos in range(len(newseq)):
-                        #             if newseq[pos] != oldseq[pos] and newseq[pos] not in ["N", "-"] and oldseq[pos] not in [
-                        #                 "N", "-"]:
-                        #                 anymut = 'yes'
-                        #         if anymut == 'no':
-                        #             if "-" not in existlocus:
-                        #                 matchallelelist.append(existlocus)
-                        #             allele = existlocus.split("_")[0].strip("-")
-                        #             newnegs.append(("", allele, newseq, muts))
-                        #             mut_per_allele[existlocus] = anymut
-                            # if locus == "STMMW_13971":
-                            #     print(existlocus,anymut,muts)
-
-                        ##check if neg match is contradicted by pos match to same allele and remove neg match if so.
-                        nnewnegs = []
-                        for match in newnegs:  # a match to a
-                            if match[1] in posalleles[locus]:
-                                if match[1] not in matchallelelist:
-                                    pass
-                                else:
-                                    nnewnegs.append(match)
-
-                        newnegs = list(nnewnegs)
-
-                        if len(newnegs) == 0:  # if no matches to new allele
-                            if "N" in newseq:  # if any missing data then call 0
-                                ##call as 0
-                                outcomes[locus] = ("novel neg allele", "", newseq, muts)
-                            else:  # if no missing data call new pos allele
-                                outcomes[locus] = ("novel pos allele", "", newseq, muts)
-                        elif len(newnegs) == 1:  # if only one match
-                            if "N" in newseq:  # if new allele is negative
-                                allele = newnegs[0][1]
-                                outcomes[locus] = ("new neg allele", allele, newseq, muts)
-                            else:
-                                allele = newnegs[0][1]
-                                #  new positive version of negative match allele (neg matches with other, non-matching pos allele are already removed)
-                                outcomes[locus] = ("new pos allele", allele, newseq, muts)
-                        else:  # if more than one match to new allele
-                            allele_hits = list(set([neg_to_pos(x[1]) for x in
-                                                    newnegs]))  # Get set of positive versions of allele that match
-                            if len(allele_hits) > 1:
-                                if "N" in newseq:
-                                    ## this means a negative allele matches 2 or more other alleles: call as 0
-                                    ##check what other related sts have at this position (by higher CC) if any called with one that can match then assign otherwise 0
-                                    allele = "0"
-                                    #  new negative allele for allele assigned by check_locus_allele_freqs_in_higher_cc
-                                    outcomes[locus] = ("new neg allele", allele, newseq, muts)
-                                else:
-                                    ## check if negative matches have any pos allele associated if no then assign to neg number otherwise next pos
-                                    outcomes[locus] = check_locus_allele_freqs(posalleles[locus],allele_hits, newseq, muts)
-                            else:
-                                if "N" in newseq:
-                                    ##this means new allele is negative and only matches one other allele number (could be many neg +pos)
-                                    allele = allele_hits[0]
-                                    ##check what other related sts have at this position (by higher CC) if any called with one that can match then assign otherwise 0
-                                    outcomes[locus] = ("new neg allele", allele, newseq, muts)
-                                else:
-                                    ## if there is only one possible positive match and the matches are negative
-                                    allele = neg_to_pos(newnegs[0][1])
-                                    outcomes[locus] = ("new pos allele", allele, newseq, muts)
+    # newloctype(locus,combined_todo,posalleles,negalleles,args)
+    time2 = time.time()
+    outcomesls = run_multiprocessing(newloctype,mpinputs,args.threads)
+    outcomes = dict(zip(locus_processing_list, outcomesls))
+    #
+    # #  determine what type of new allele should be assigned loci in combined_todo
+    # for locus in combined_todo:
+    #     if locus not in assignments:  # if locus not already assigned
+    #         if locus in loci_list:
+    #             if locus not in done:  # if locus not already assigned to exact negative match (i.e. in done list)
+    #                 muts = []
+    #                 newnegs = []
+    #                 newseq = str(combined_todo[locus])
+    #                 existing_allele_sizes = [len(posalleles[locus][x]) for x in posalleles[locus]]
+    #
+    #                 if len(newseq) not in existing_allele_sizes:
+    #                     outcomes[str(locus)] = ("new pos allele", "0", newseq, muts)
+    #
+    #                 else:
+    #                     matchallelelist = []
+    #                     if args.appname not in ["Salmonella","Enterica","Vibrio"]:
+    #                         oldseq = posalleles[locus]["1"]
+    #
+    #                         #  Get SNPs from allele relative to "1"/ref allele
+    #                         for pos in range(len(oldseq)):
+    #                             if newseq[pos] != oldseq[pos] and newseq[pos] not in ["N", "-"] and oldseq[pos] not in ["N",
+    #                                                                                                                     "-"]:
+    #                                 muts.append((oldseq[pos], str(pos), newseq[pos]))
+    #                                 # if locus == "STM0777":
+    #                                 #     print(muts)
+    #                         if args.printinfo:
+    #                             print(muts)
+    #
+    #                     #  For each existing allele in locus check for any SNPS relative to current locus
+    #                     #  If no muts for a given allele then add to newnegs with that allele, the sequence and mutations to ref
+    #
+    #                     mut_per_allele = {}
+    #
+    #                     newnegs,muts,matchallelelist,posmatch = get_muts(newnegs,posalleles,locus,newseq,muts,matchallelelist)
+    #                     if not posmatch:
+    #                         newnegs, muts, matchallelelist, posmatch = get_muts(newnegs, negalleles, locus, newseq,
+    #                                                                             muts, matchallelelist)
+    #                     # for existlocus in alleles[locus]:
+    #                     #     oldseq = str(alleles[locus][existlocus])
+    #                     #     if len(newseq) == len(oldseq):
+    #                     #         anymut = 'no'
+    #                     #         for pos in range(len(newseq)):
+    #                     #             if newseq[pos] != oldseq[pos] and newseq[pos] not in ["N", "-"] and oldseq[pos] not in [
+    #                     #                 "N", "-"]:
+    #                     #                 anymut = 'yes'
+    #                     #         if anymut == 'no':
+    #                     #             if "-" not in existlocus:
+    #                     #                 matchallelelist.append(existlocus)
+    #                     #             allele = existlocus.split("_")[0].strip("-")
+    #                     #             newnegs.append(("", allele, newseq, muts))
+    #                     #             mut_per_allele[existlocus] = anymut
+    #                         # if locus == "STMMW_13971":
+    #                         #     print(existlocus,anymut,muts)
+    #
+    #                     ##check if neg match is contradicted by pos match to same allele and remove neg match if so.
+    #                     nnewnegs = []
+    #                     for match in newnegs:  # a match to a
+    #                         if match[1] in posalleles[locus]:
+    #                             if match[1] not in matchallelelist:
+    #                                 pass
+    #                             else:
+    #                                 nnewnegs.append(match)
+    #
+    #                     newnegs = list(nnewnegs)
+    #
+    #                     if len(newnegs) == 0:  # if no matches to new allele
+    #                         if "N" in newseq:  # if any missing data then call 0
+    #                             ##call as 0
+    #                             outcomes[locus] = ("novel neg allele", "", newseq, muts)
+    #                         else:  # if no missing data call new pos allele
+    #                             outcomes[locus] = ("novel pos allele", "", newseq, muts)
+    #                     elif len(newnegs) == 1:  # if only one match
+    #                         if "N" in newseq:  # if new allele is negative
+    #                             allele = newnegs[0][1]
+    #                             outcomes[locus] = ("new neg allele", allele, newseq, muts)
+    #                         else:
+    #                             allele = newnegs[0][1]
+    #                             #  new positive version of negative match allele (neg matches with other, non-matching pos allele are already removed)
+    #                             outcomes[locus] = ("new pos allele", allele, newseq, muts)
+    #                     else:  # if more than one match to new allele
+    #                         allele_hits = list(set([neg_to_pos(x[1]) for x in
+    #                                                 newnegs]))  # Get set of positive versions of allele that match
+    #                         if len(allele_hits) > 1:
+    #                             if "N" in newseq:
+    #                                 ## this means a negative allele matches 2 or more other alleles: call as 0
+    #                                 ##check what other related sts have at this position (by higher CC) if any called with one that can match then assign otherwise 0
+    #                                 allele = "0"
+    #                                 #  new negative allele for allele assigned by check_locus_allele_freqs_in_higher_cc
+    #                                 outcomes[locus] = ("new neg allele", allele, newseq, muts)
+    #                             else:
+    #                                 ## check if negative matches have any pos allele associated if no then assign to neg number otherwise next pos
+    #                                 outcomes[locus] = check_locus_allele_freqs(posalleles[locus],allele_hits, newseq, muts)
+    #                         else:
+    #                             if "N" in newseq:
+    #                                 ##this means new allele is negative and only matches one other allele number (could be many neg +pos)
+    #                                 allele = allele_hits[0]
+    #                                 ##check what other related sts have at this position (by higher CC) if any called with one that can match then assign otherwise 0
+    #                                 outcomes[locus] = ("new neg allele", allele, newseq, muts)
+    #                             else:
+    #                                 ## if there is only one possible positive match and the matches are negative
+    #                                 allele = neg_to_pos(newnegs[0][1])
+    #                                 outcomes[locus] = ("new pos allele", allele, newseq, muts)
+    print("\t\tget_negmatches_sql secondloop", (" --- %s seconds ---" % (time.time() - time2)))
     return outcomes
 
 
@@ -745,10 +915,11 @@ def sort_outcomes_and_assign(outcome, allele_assignments, connection, args):
     :param args: input argparse args
     :return: updated allele assignments and new allele info in format {locus:(locus,allele assignment,sequence,snps)}
     """
-
+    time1 = time.time()
     # get next allele number and next dst for each allele for loci in outcome
     next_pos_dict, next_neg_dict = get_max_loci_dict(outcome, connection, args)
-
+    print("\t\tsort_outcomes_and_assign get max", (" --- %s seconds ---" % (time.time() - time1)))
+    time1 = time.time()
     new_allele_outdict = {}
     for locus in outcome:
         if outcome[locus][1] == "0":
@@ -763,7 +934,8 @@ def sort_outcomes_and_assign(outcome, allele_assignments, connection, args):
 
             #  output new allele info
             new_allele_outdict[locus] = [(locus, str(newno), outcome[locus][2], outcome[locus][3])]
-
+    print("\t\tsort_outcomes_and_assign secondloop", (" --- %s seconds ---" % (time.time() - time1)))
+    time1 = time.time()
     return allele_assignments, new_allele_outdict
 
 
@@ -793,6 +965,9 @@ def assign_new_allele_names(locus, type, negallele, nextpos, nextneg_dict):
             newallele = newposallele
         else:
             newallele = nextpos
+
+        # TODONE need to check if pos already exists for neg allele hit - if so then assign new pos allele no.
+        # Negative matches where there is a positive allele that doesn't match are removed earlier so above TD is ok
 
         return newallele
 
@@ -886,16 +1061,20 @@ def get_max_loci_dict(outcome, connection, args):
     :param args: input argparse args
     :return: next_pos_dict {locus:next allele number} & next_neg_dict {locus:{allele:next dst number for allele}}
     """
+
+    time1 = time.time()
     get_max_for_loci = []
     for i in outcome:
         if outcome[i][1] != "0":
             get_max_for_loci.append(i)
-
+    print("\t\tget_max_loci_dict parse outcome", (" --- %s seconds ---" % (time.time() - time1)))
+    time1 = time.time()
     #  Get allele numbers for all loci in  get_max_for_loci
     locuslisstr = "('" + "','".join(get_max_for_loci) + "')"
     sqlquery = """Select * FROM "{}_allele" WHERE "locus_id" IN {};""".format(args.appname, locuslisstr)
     tablels = sqlquery_to_outls(connection, sqlquery)
-
+    print("\t\tget_max_loci_dict run sql query", (" --- %s seconds ---" % (time.time() - time1)))
+    time1 = time.time()
     #  process sql out and store allele numbers as a list for each locus
     loci_allele_dict = {}
     for line in tablels:
@@ -904,7 +1083,8 @@ def get_max_loci_dict(outcome, connection, args):
             loci_allele_dict[loc] = [line[1]]
         else:
             loci_allele_dict[loc].append(line[1])
-
+    print("\t\tget_max_loci_dict first loop", (" --- %s seconds ---" % (time.time() - time1)))
+    time1 = time.time()
     next_pos_dict = {}
     next_neg_dict = {}
 
@@ -912,24 +1092,30 @@ def get_max_loci_dict(outcome, connection, args):
         #  For each locus get maximum allele number after converting all alleles to positive
         next_neg_dict[locus] = {}
         allelelist = loci_allele_dict[locus]
-        pos = [x.split("_")[0].replace("-", "") for x in allelelist if x != '']
+        # pos = [x.split("_")[0].replace("-", "") for x in allelelist if x != '']
+        alleledict = {}
+        for allele in allelelist:
+            allelesub = allele.replace("-","").split("_")
+            pallele = allelesub[0]
+            if pallele != '':
+                if pallele not in alleledict:
+                    alleledict[pallele] = "1"
+
+                if len(allelesub) > 1:
+                    negallele = int(allelesub[1])
+                    if negallele >= int(alleledict[pallele]):
+                            alleledict[pallele] = str(negallele+1)
+
+
         # assign next allele number
-        posnext = max(map(int, pos)) + 1
+        posnext = max(map(int, list(alleledict.keys()))) + 1
+
+
+        next_neg_dict[locus] = dict(alleledict)
         # if posnext == 1:
         #     input("posnext Press Enter to continue...{}".format(locus))
         next_pos_dict[locus] = str(posnext)
-        next_neg_dict[locus] = {}
-
-        #  For each called allele get all negative numbers i.e. -33_2 -> 2
-        for i in pos:
-            negs = [x.split("_")[1] for x in allelelist if "-" + i in x]
-
-            if negs == []:  # if no negative values then next = 1
-                next_neg_dict[locus][i] = "1"
-            else:  # otherwise next = max negatives +1
-                nextneg = max(map(int, negs)) + 1
-                next_neg_dict[locus][i] = str(nextneg)
-
+    print("\t\tget_max_loci_dict second loop", (" --- %s seconds ---" % (time.time() - time1)))
     return next_pos_dict, next_neg_dict
 
 
@@ -1132,7 +1318,7 @@ def call_st_cc(stres, ccres, odcres, profile, level, odcdiffs,odclev, connection
     odcno2:[(stA,dstA,odcB),(stB,dstB,odcB)...]}
     :param profile: allele profile for level as dict {locus:allele,locusb:alleleb...}
     :param level: current MGT level
-    :param odcdiffs: dictionary of odc number to number of differences {1:1,2:2,3:5,4:10}
+    :param odcdiffs: number of differences at odc levels {1:1,2:2,5:3,10:4}
     :param connection: psycopg2 connection object
     :param args: input argparse arguments
 
@@ -1190,7 +1376,7 @@ def call_st_cc(stres, ccres, odcres, profile, level, odcdiffs,odclev, connection
         odcmerges = {x: [] for x in odcdiffs}
 
         return st, dst, cc, merges, odc, odcmerges
-
+    # TODO wgMLST: ignore 0 limit for wgMLST level
     if len(stres) == 0:  # if no ST matches assign new ST and if missing data add dst of 1
         if args.query:
             st=0
@@ -1200,6 +1386,7 @@ def call_st_cc(stres, ccres, odcres, profile, level, odcdiffs,odclev, connection
             if need_dst:
                 st = nextst
                 dst = 1
+
             else:
                 st = nextst
                 dst = 0
@@ -1207,7 +1394,8 @@ def call_st_cc(stres, ccres, odcres, profile, level, odcdiffs,odclev, connection
     else:
         sthits = []
         for i in stres:
-            sthits.append(i[0])  # get list of sts (i[0]) ignoring dst values (i[1])
+            if i != '':
+                sthits.append(i[0])  # get list of sts (i[0]) ignoring dst values (i[1])
 
         if len(list(set(sthits))) > 1:
             ## if only one of the multiple hits is a st.0 AP then assign new neg to that ST
@@ -1380,7 +1568,7 @@ def get_most_frequent_st(args,stlist,level,connection):
     ## get ids for all st (including all dsts) in stlist
     ## at the same time get number of strains with that mgt id
     ## do for each st in stlist
-    largest = (0, "")
+    largest = (-1, "")
 
 
     for st in stlist:
@@ -1388,10 +1576,12 @@ def get_most_frequent_st(args,stlist,level,connection):
             app=args.appname, l=level, st=st)
         match_isolates = sqlquery_to_outls(connection, sqlq)
         nohits = len(match_isolates)
+        print(nohits,st)
         if args.printinfo:
             print("st counts", nohits, st)
         if nohits > largest[0]:
             largest = (nohits, st)
+
 
     return largest[1]
 
@@ -1474,41 +1664,53 @@ def detect_exact_ap_matches(connection, tablesdict, level, inquery, dbname, odc_
 
 
 def remove_sts_with_nonmatching_dsts(connection, level, dbname, idmatchcounts):
-    # get id and st from ap table
-    get_sts = """ SELECT "id","st" FROM "{}_ap{}_0" """.format(dbname, level)
+
+    get_sts = """ SELECT "id","st","dst" FROM "{}_ap{}_0" """.format(dbname, level)
 
     stres = sqlquery_to_outls(connection, get_sts)
 
-    stcounts = {}
+    all_st_apids = {}
     id_to_st = {}
-
-    # count number of st.dsts per st total
+    # get all id to st links and list of apids per st
     for inf in stres:
-        st = inf[1]
-        id = inf[0]
-        stcounts[st] = stcounts.get(st, 0) + 1
+        st = str(inf[1])
+        id = str(inf[0])
         id_to_st[id] = st
+        if st not in all_st_apids:
+            all_st_apids[st] = [id]
+        else:
+            all_st_apids[st].append(id)
 
-    # count number of st.dsts per st in matching APs
-    matches_st_check = {}
-    for ap_id in idmatchcounts:
-        st = id_to_st[int(ap_id)]
-        matches_st_check[st] = matches_st_check.get(st, 0) + 1
+    # get sts and lists of ids from matches
 
-    # if number of total st.dsts is not the same as total matching st.dsts then remove st from matches
-    delst = []
-    for st in matches_st_check:
-        if matches_st_check[st] != stcounts[st]:
-            delst.append(st)
+    match_st_apids = {}
+    for apid in idmatchcounts:
+        st = id_to_st[apid]
+        if st not in match_st_apids:
+            match_st_apids[st] = [len(idmatchcounts[apid])]
+        else:
+            match_st_apids[st].append(len(idmatchcounts[apid]))
+    #check if number of matches in  match_st_apids[st] is the same as in all_st_apids[st]
+    # if not remove all instances of ST from idmatchcount (means that some aps with the same ST are above max diff threshold)
+    # also in same loop
+    # get max difference per st
+    # if any idmatchcounts[apid] length is less than max remove ap from outputs
+    st_to_remove = []
+    ap_to_remove = []
+    for st in match_st_apids:
+        if len(all_st_apids[st]) > len(match_st_apids[st]):
+            st_to_remove.append(st)
+        maxdiff = max(match_st_apids[st])
+        for ap in idmatchcounts:
+            if st == id_to_st[ap]:
+                if len(idmatchcounts[ap]) < maxdiff:
+                    ap_to_remove.append(ap)
 
-    # remove all st.dsts from idmatchcounts if the st is in delst list
-    idkeys = list(idmatchcounts.keys())
-    for ap_id in idkeys:
-        st = id_to_st[int(ap_id)]
-        if st in delst:
-            del idmatchcounts[ap_id]
-
-    return idmatchcounts
+    out_idmatchcounts = {}
+    for apid in idmatchcounts:
+        if apid not in ap_to_remove and id_to_st[apid] not in st_to_remove:
+            out_idmatchcounts[apid] = idmatchcounts[apid]
+    return out_idmatchcounts
 
 
 def gather_st_cc_odc_matches(allowed_diffs, totquery, idmatchcounts, odc_level, zerocounts, args):
@@ -1532,8 +1734,8 @@ def gather_st_cc_odc_matches(allowed_diffs, totquery, idmatchcounts, odc_level, 
     zeromatch_limit = int(
         totquery * float(
             args.apzerolim))  # scriptvariable - max number of 0s for match - set at 2% of loci rounded down
-
     # get st, cc and odc matches
+
     for id in idmatchcounts:
         if len(idmatchcounts[id]) == 0:  # if no missmatches call st match
             stmatch.append(id)
@@ -1554,6 +1756,8 @@ def gather_st_cc_odc_matches(allowed_diffs, totquery, idmatchcounts, odc_level, 
             #  if matches are >= min allowed and number of zeros is less than limit add to match list
             if len(idmatchcounts[id]) <= 1 and zerocounts[id] < zeromatch_limit:
                 ccmatch.append(id)
+
+
 
     return stmatch, ccmatch, odcmatches
 
@@ -1603,6 +1807,9 @@ def get_matches(level, connection, inquery, allowed_diffs, tablesdict, odc_level
 
     ############ first check for exact match and if there is a hit return that ST,dST and CC
 
+
+
+
     if args.timing:
         print("{} start get matches".format(level), (" --- %s seconds ---" % (time.time() - start_time)))
 
@@ -1636,7 +1843,7 @@ def get_matches(level, connection, inquery, allowed_diffs, tablesdict, odc_level
 
 
     totquery = 0
-
+    ## TODO wgMLST: can compare wgMLST only when cgMLST is not new. otherwise default new ST, for wgMLST level just examine wgMLST loci, can rely on MGT8 to type remainder
     initialise = True
     sublisno = 0
     for no in list(sorted(tablesdict[level].keys())):
@@ -1646,91 +1853,94 @@ def get_matches(level, connection, inquery, allowed_diffs, tablesdict, odc_level
         for l in args.variable_alleles:
             if l in locus_columns:
                 sorted_locus_columns.append(l)
-
-
-        if args.timing:
-            print("table no: {}, sublist no: {}".format(no, sublisno),
-                  (" --- %s seconds ---" % (time.time() - start_time)))
-        query = []
-        locusls = []
-        for i in sorted_locus_columns:
-            # q = nodash_to_dash[i]
-            query_allele = inquery[i]
-            locusls.append(dash_nodash[i])
-            if "new" in query_allele and "-" not in query_allele:
-                query.append('0')
-            else:
-                query.append(neg_to_pos(query_allele))
-        totquery += len(query)
-        locus_retreive_string = '","'.join(locusls)
-
-        #  depending on AP table the AP name has different column heading
-        if no == 0:
-            keyname = "id"
-            matchstring = ''
-        else:
-            keyname = "main_id"
-            matchstring =   """ WHERE {keyname} IN ('{idls}')""".format(keyname=keyname,idls="','".join(map(str, idmissmatchcounts.keys())))
-
-        # #  list of ids that are already over the allowdiff - below are placeholders to be added to after table 1 of a given level
-        # if over_max == []:
-        #     over_max_string = "(1000000000000000000000000000,2000000000000000000000000000000)"
-        # else:
-        #     over_max_string = "(" + ",".join(map(str, matching_st_ids.keys())) + ")"
-
-        if odc_level:
-            allowdiff = max(list(allowed_diffs.keys()))
-        else:
-            allowdiff = list(allowed_diffs.keys())[0]
-
-        #  if a subset of sts is selected (matching_st_ids is not empty)
-        #  then add conditional to sql requiring matches to be in subset
-
-
-        sqlquery = """SELECT "{kname}","{locusls}" FROM "{db}_ap{lev}_{tableno}"{match};""".format(
-            locusls=locus_retreive_string, db=dbname, lev=level, tableno=str(no), kname=keyname,
-            match=matchstring)
-        # print(sqlquery)
-        ## submit above huge query
-
-
-
-
-        stres = sqlquery_to_outls(connection, sqlquery)
-
-        if args.timing:
-            print("sql_query done", (" --- %s seconds ---" % (time.time() - start_time)))
-        ##TODO multithread regex
-        stres = "\n".join(["\t".join(map(str,x)) for x in stres])
-        stres = re.sub(r"_[0-9]+", "", stres)
-        stres = re.sub(r"-", "", stres)
-        stres = stres.split("\n")
-        stres = [x.split("\t") for x in stres]
-        if args.timing:
-            print("regex_replace done", (" --- %s seconds ---" % (time.time() - start_time)))
-
-        min_matches = len(query) - int(allowdiff)
-        res = []
         chunk = 50
-        chunkls = range(0, len(locusls), chunk)
-        if initialise:
-            idmissmatchcounts = {x[0]: [] for x in stres}
-            zerocounts = {x[0]: 0 for x in stres}
-        newap = query
-        existap = {x[0]:x[1:] for x in stres}
+        initchunk = 12
+        numinit = 3
+        initlen = initchunk*numinit
 
-        for pstart in chunkls:
+        if len(sorted_locus_columns) <= initlen:
+            chunkls = range(0, len(sorted_locus_columns), initchunk)
+        else:
+            initchunks = range(0, initlen, initchunk)
+            remainingchunk = range(initlen, len(sorted_locus_columns), chunk)
+            chunkls = list(initchunks) + list(remainingchunk)
+
+        for pos,pstart in enumerate(chunkls):
             start_time2 = time.time()
-            if pstart + chunk > len(newap):
-                pend = len(newap)
+            if chunkls[pos] ==  chunkls[-1]:
+                pend = len(sorted_locus_columns)
             else:
-                pend = pstart + chunk
+                pend = chunkls[pos+1]
+            if pend >= len(sorted_locus_columns):
+                pend = len(sorted_locus_columns)
+
+
+            chunkloci = sorted_locus_columns[pstart:pend]
+
+            query = []
+            locusls = []
+
+            for i in chunkloci:
+                # q = nodash_to_dash[i]
+                query_allele = inquery[i]
+                locusls.append(dash_nodash[i])
+                if "new" in query_allele and "-" not in query_allele:
+                    query.append('0')
+                else:
+                    query.append(neg_to_pos(query_allele))
+            totquery += len(query)
+            locus_retreive_string = '","'.join(locusls)
+
+            if initialise and no == 0:
+                keyname = "id"
+                matchstring = ''
+            elif initialise:
+                keyname = "main_id"
+                matchstring = ''
+            elif no == 0:
+                keyname = "id"
+                matchstring = """ WHERE {keyname} IN ('{idls}')""".format(keyname=keyname, idls="','".join(
+                        map(str, idmissmatchcounts.keys())))
+            else:
+                keyname = "main_id"
+                matchstring =   """ WHERE {keyname} IN ('{idls}')""".format(keyname=keyname,idls="','".join(map(str, idmissmatchcounts.keys())))
+
+            if odc_level:
+                allowdiff = max(list(allowed_diffs.keys()))
+            else:
+                allowdiff = list(allowed_diffs.keys())[0]
+
+            sqlquery = """SELECT "{kname}","{locusls}" FROM "{db}_ap{lev}_{tableno}"{match};""".format(
+                locusls=locus_retreive_string, db=dbname, lev=level, tableno=str(no), kname=keyname,
+                match=matchstring)
+
+            stres = sqlquery_to_outls(connection, sqlquery)
+
+            if args.timing:
+                    print("\tmatchingstep: " + str(pstart) + " sql_query done", (" --- %s seconds ---" % (time.time() - start_time2)))
+
+                ##TODO multithread regex
+            stres = "\n".join(["\t".join(map(str,x)) for x in stres])
+            stres = re.sub(r"_[0-9]+", "", stres)
+            stres = re.sub(r"-", "", stres)
+            stres = stres.split("\n")
+            stres = [x.split("\t") for x in stres]
+            if args.timing:
+                    print("\tmatchingstep: " + str(pstart) + " regex_replace done", (" --- %s seconds ---" % (time.time() - start_time2)))
+
+            #TODO wgMLST: change missmatch scoring for wgMLST loci below
+            if initialise:
+                idmissmatchcounts = {x[0]: [] for x in stres}
+                zerocounts = {x[0]: 0 for x in stres}
+            newap = query
+            existap = {x[0]:x[1:] for x in stres}
+
             newmatch = dict(idmissmatchcounts)
             for appos in idmissmatchcounts:
                 if appos in existap:
                     ex = existap[appos]
                     missmatchno = []
-                    for pos in range(pstart, pend):
+                    for pos in range(len(newap)):
                         #     try:
                         if newap[pos] != ex[pos]:
                             if newap[pos] not in ['0',''] and ex[pos] not in ['0','']:
@@ -1742,14 +1952,14 @@ def get_matches(level, connection, inquery, allowed_diffs, tablesdict, odc_level
                 newmatch[appos] += missmatchno
             idmissmatchcounts = {x: newmatch[x] for x in newmatch if len(newmatch[x]) <= allowdiff}
             if args.timing:
-                print("\tmatchingstep" + str(pstart), (" --- %s seconds ---" % (time.time() - start_time2)))
-        initialise = False
+                print("\t matchingstep: " + str(pstart) + "table: "+ str(no), (" --- %s seconds ---" % (time.time() - start_time2)))
+            initialise = False
+            if idmissmatchcounts == {}:
+                break
         if idmissmatchcounts == {}:
-            break
-    if idmissmatchcounts == {}:
-        if args.printinfo:
-            print("No Ap matches at level {}".format(level))
-        return [], [], {}
+            if args.printinfo:
+                print("No Ap matches at level {}".format(level))
+            return [], [], {}
 
 
 
@@ -1816,6 +2026,9 @@ def get_matches(level, connection, inquery, allowed_diffs, tablesdict, odc_level
 
 ###### UTILS #######
 
+def run_multiprocessing(func, i, n_processors):
+    with Pool(processes=n_processors) as pool:
+        return pool.starmap(func, i)
 
 def CheckDbForName(connection, name, args):
     sqlquery = """ SELECT "identifier" FROM "{}_isolate" WHERE "identifier" = '{}'; """.format(args.appname, name)
@@ -1924,6 +2137,8 @@ def split_in_alleles(InputAllelesFile):
             AllCalls[locus] = "newpos"
 
 
+    # print(nodash_to_dash["STMMW00951"])
+
     return AllCalls, PosMatch, NewPos, NewNeg, ZeroCalls, MGT1, species_sero, dash_to_nodash, nodash_to_dash
 
 
@@ -1955,6 +2170,14 @@ def write_to_tables(alleles_out_dict, profile, level, st, dst, cc, merges, args,
     alleleLocation = args.mgtalleles
 
     if alleles_out_dict != {}:  # if there are any new alleles called
+        # print(alleles_out_dict)
+        # for i in alleles_out_dict:
+        #     if alleles_out_dict[i][3] == [] and neg_to_pos(alleles_out_dict[i][1]) != "1":
+        #         print(alleles_out_dict[i])
+        #         input("pos w no snps Press Enter to continue...")
+        #     elif alleles_out_dict[i][1] == "1" and alleles_out_dict[i][3] != []:
+        #         print(alleles_out_dict[i])
+        #         input("Press Enter to continue...")
 
         addAlleles(projectpath, args.mgtapp, args.appname, alleleLocation, alleles_out_dict,args.settings)  # add new alleles
 
@@ -1981,6 +2204,8 @@ def update_status(newstatus, args, conn, ids, field, idtype):
         newstatus,
         idtype,
         "','".join(ids))
+
+    # print(sqlcmd)
 
     cur = conn.cursor()  # generate cursor with connection
     cur.execute(sqlcmd)
@@ -2025,11 +2250,26 @@ def write_finalout(isolate_info, stresults, no_tables, conn, view_update, MGT1Ca
         st = stresults[lev][0]
         dst = stresults[lev][1]
         levstdst = "{0}.{1}".format(st, dst)
+        # if st in [0,"0"]:
+        #     levstdst = "-.-"
         mgtlist.append(levstdst)
         levels.append("MGT{}".format(lev))
 
     # generates hgt object and link to strain
     addTheHstMatrix(args.mgtpath, args.mgtapp, args.appname, mgtlist,args.settings,levels)
+
+    # get view update sql command
+
+    # try:
+    #     sql_command = open(view_update, 'r').read()
+    # except:
+    #     sys.exit("The following path and file must exist relative to location of script: /UpdateScripts/runOnDb.sql")
+    #
+    # # run view update
+    # cur = conn.cursor()
+    # cur.execute(sql_command)
+    # conn.commit()
+    # cur.close()
 
 
 def get_isolate_proj(name, conn, args):
@@ -2074,7 +2314,6 @@ def get_odc_diffs(args,level,conn):
             odcdiffs[x[1]] = x[3]
     # print(odcdiffs)
     return odcdiffs
-
 def check_alleles_file_format(args, conn, allelesfile,StrainName):
     InputAlleles = SeqIO.parse(allelesfile, "fasta")
 
@@ -2109,6 +2348,11 @@ def main():
     args.projectPath = path.dirname(path.dirname(path.dirname(path.abspath(__file__)))) + "/"
     args.mgtalleles = settings.ABS_SUBDIR_ALLELES + "/" + args.appname + "/"
 
+    # args.mgtalleles = get_abs_from_rel_and_abs(mgtalleles,args.projectPath) + "/" + args.appname + "/"
+
+    # if not args.mgtalleles.startswith("/"):
+    #     args.mgtalleles = "/" + args.mgtalleles
+
     metadata_type = args.metadata_type
     if not args.local:
         host = settings.NONLOCALHOST
@@ -2131,6 +2375,19 @@ def main():
 
     serotype_d = settings.SPECIES_SEROVAR
 
+    # serotype_d = {'Typhimurium': 'Salmonella',
+    #               'I 4,[5],12:i:-': 'Salmonella',
+    #               'Typhi': 'Enterica',
+    #               'Enteritidis': 'Enteritidis',
+    #               'Paratyphi B var. Java': 'Enterica',
+    #               'Paratyphi B var. Java monophasic': 'Enterica',
+    #               'Paratyphi B': 'Enterica',
+    #               'Paratyphi A': 'Enterica',
+    #               'Paratyphi C': 'Enterica',
+    #               'Vibrio cholerae': 'Vibrio',
+    #               'Staphylococcus aureus': 'Staphylococcus',
+    #               'Bordetella pertussis': 'Pertussis',
+    #               'Escherichia coli':'Ecoli'}
 
     AllCalls, PosMatches, NewPosAlleles, NewNegAlleles, ZeroCallAlleles, MGT1Call, species_sero, dash_to_nodash, nodash_to_dash = split_in_alleles(
         InputAllelesFile)
@@ -2160,9 +2417,10 @@ def main():
     start_time2 = time.time()
     no_tables = get_table_nos(conn,
                               args)  # descriptions of allele profile tables in format: {level:{table number: [list of locus names in table]}}
+
+    args.variable_alleles = get_mostvariable(args,conn)
     if args.timing:
         print("\tget variable loci", (" --- %s seconds ---" % (time.time() - start_time2)))
-    args.variable_alleles = get_mostvariable(args,conn)
     st_results = {}
     cc_results = {}
     merge_results = {}
@@ -2177,9 +2435,11 @@ def main():
     minlevel = get_min_scheme(conn, args)
 
     odcdiffs = OrderedDict()
-
+    posalleleseqs = {}
+    negalleleseqs = {}
     for level in range(minlevel, maxlevel + 1):
         start_time1 = time.time()
+        # print(level)
         """ 1 - get allele profile for current level """
 
         """ get clonal complex assignments from previous schemes to use for Db subsetting - currently off by default in args.subset
@@ -2212,7 +2472,7 @@ def main():
             ccb1 = ""
             ccb2 = ""
 
-        profile, all_assignments, new_allele_outdict = get_allele_profile(conn, level,
+        profile, all_assignments, new_allele_outdict,posalleleseqs,negalleleseqs = get_allele_profile(conn, level,
                                                                                            NewPosAlleles,
                                                                                            NewNegAlleles, AllCalls,
                                                                                            PosMatches,
@@ -2221,6 +2481,8 @@ def main():
                                                                                            all_assignments, args,
                                                                                            nodash_to_dash,
                                                                                            start_time,
+                                                                                           posalleleseqs,
+                                                                                           negalleleseqs,
                                                                                            ccb1=ccb1,
                                                                                            ccb2=ccb2,
                                                                                            ccsubsetlevs=ccsubsetlevs)
@@ -2228,6 +2490,12 @@ def main():
         if args.timing:
             print("{} get allele profile".format(level), (" --- %s seconds ---" % (time.time() - start_time)))
 
+        # zcount = 0
+        #
+        # for i in profile:
+        #     if profile[i] == '0':
+        #         zcount += 1
+        # print(profile)
         profile_results[level] = profile
         new_alleles_results[level] = new_allele_outdict
 
@@ -2390,51 +2658,80 @@ def main():
 
 def parseargs():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("inalleles", help="File path to strain alleles file (output from genomes_to_alleles.py)")
-    parser.add_argument("appname", help="Name of database (i.e. Salmonella)")
-    parser.add_argument("-s", "--settings", help="name of settings file to use (minus '.py')")
-    parser.add_argument("-m", "--inmeta", help="File path to strain metadata")
-    parser.add_argument("-t", "--metadata_type",
-                        help="The source of metadata for conversion (mgt or enterobase or none if no file)",
-                        default="enterobase")
-    parser.add_argument("--id",
-                        help="strain database id", default="")
-    parser.add_argument("--project",
-                        help="project that the data will be added to, not used in cron",
-                        default="ENA-SRA")
-    parser.add_argument("--locusnlimit",
-                        help="minimum proportion of the locus length that must be present (not masked with Ns)",
-                        default=0.80)
-    parser.add_argument("--snpwindow",
-                        help="Size of sliding window to screen for overly dense SNPs",
-                        default=40)
-    parser.add_argument("--densitylim",
-                        help="maximum number of SNPs allowed to be present in window before window is masked",
-                        default=4)
-    parser.add_argument("--apzerolim",
-                        help="maximum proportion of loci that can be called zero before the ST (and CC) is called 0",
-                        default=0.04)
-    parser.add_argument("--subsetwcc",
-                        help="EXPERIMENTAL. ONLY FOR TESTING! Boolean. If set will limit ST search for a level based on the CC or the previous 2 levels",
-                        action='store_true')
-    parser.add_argument("--subsetst",
-                        help="WARNING THIS WILL ONLY WORK FOR NESTED DESIGNS AND WILL BREAK CC AND ODC CALLS - ONLY USE FOR INCREASED SPEED IN large scheme calling (performance increase dubious)",
-                        action='store_true')
-    parser.add_argument("--timing",
-                        help="print time taken to run various sections",
-                        action='store_true')
-    parser.add_argument("-p", "--printinfo", help="print random extra info", action='store_true')
-    parser.add_argument("-c", "--cron", help="flag for use if run as part of cron_pipeline", action='store_true')
-    parser.add_argument("--query", help="run allele to db as query only, no new alleles, or STs will be called onyl existing ones will be matched", action='store_true')
-    parser.add_argument("--local",
-                        help="use psql_details['HOST'] from settings for postgres host rather than NONLOCALHOST variable in settings",
-                        action='store_true')
+    test = False
+    if not test:
+
+        parser.add_argument("inalleles", help="File path to strain alleles file (output from genomes_to_alleles.py)")
+        parser.add_argument("appname", help="Name of database (i.e. Salmonella)")
+        parser.add_argument("-s", "--settings", help="name of settings file to use (minus '.py')")
+        parser.add_argument("-m", "--inmeta", help="File path to strain metadata")
+        parser.add_argument("-t", "--metadata_type",
+                            help="The source of metadata for conversion (mgt or enterobase or none if no file)",
+                            default="enterobase")
+        parser.add_argument("--id",
+                            help="strain database id", default="")
+        parser.add_argument("--project",
+                            help="project that the data will be added to, not used in cron",
+                            default="ENA-SRA")
+        parser.add_argument("--locusnlimit",
+                            help="minimum proportion of the locus length that must be present (not masked with Ns)",
+                            default=0.80)
+        parser.add_argument("--snpwindow",
+                            help="Size of sliding window to screen for overly dense SNPs",
+                            default=40)
+        parser.add_argument("--densitylim",
+                            help="maximum number of SNPs allowed to be present in window before window is masked",
+                            default=4)
+        parser.add_argument("--apzerolim",
+                            help="maximum proportion of loci that can be called zero before the ST (and CC) is called 0",
+                            default=0.04)
+        parser.add_argument("--subsetwcc",
+                            help="EXPERIMENTAL. ONLY FOR TESTING! Boolean. If set will limit ST search for a level based on the CC or the previous 2 levels",
+                            action='store_true')
+        parser.add_argument("--subsetst",
+                            help="WARNING THIS WILL ONLY WORK FOR NESTED DESIGNS AND WILL BREAK CC AND ODC CALLS - ONLY USE FOR INCREASED SPEED IN large scheme calling (performance increase dubious)",
+                            action='store_true')
+        parser.add_argument("--timing",
+                            help="print time taken to run various sections",
+                            action='store_true')
+        parser.add_argument("-p", "--printinfo", help="print random extra info", action='store_true')
+        parser.add_argument("-c", "--cron", help="flag for use if run as part of cron_pipeline", action='store_true')
+        parser.add_argument("--query", help="run allele to db as query only, no new alleles, or STs will be called onyl existing ones will be matched", action='store_true')
+        parser.add_argument("--local",
+                            help="use psql_details['HOST'] from settings for postgres host rather than NONLOCALHOST variable in settings",
+                            action='store_true')
+        parser.add_argument("--threads",
+                            help="threads for multithreaded steps",
+                            default=4,
+                            type=int)
 
     args = parser.parse_args()
-
     args.mgtpath = path.dirname(path.dirname(path.dirname(path.abspath(__file__)))) + "/"
 
     args.mgtapp = "Mgt"
+    if test:
+        args.inalleles = "/Users/mjohnpayne/Library/CloudStorage/OneDrive-UNSW/MGT/2ap_1st_problem/input_problematic_strains/90107_alleles.fasta"
+        args.appname = "Salmonella"
+        args.settings = "/Users/mjohnpayne/Library/CloudStorage/OneDrive-UNSW/PycharmProjects/MGT/Mgt/Mgt/Mgt/settings_local_mp.py"
+        args.inmeta = ""
+        args.metadata_type = "none"
+        args.id=""
+        args.project = "testing_2al1st"
+        args.locusnlimit = 0.80
+        args.snpwindow = 40
+        args.densitylim = 4
+        args.apzerolim = 0.04
+        args.subsetwcc = False
+        args.subsetst = False
+        args.timing = True
+        args.printinfo = True
+        args.cron = True
+        args.query = False
+        args.local = True
+        args.mgtpath = path.dirname(path.dirname(path.dirname(path.abspath(__file__)))) + "/"
+
+        args.mgtapp = "Mgt"
+        args.threads = 4
 
     return args
 

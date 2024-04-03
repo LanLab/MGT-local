@@ -477,8 +477,7 @@ def run_sistr(args, rename_skesa, strain, sistr_out, contam, serovar_fail):
 
     if not serovar_pass:
         outc = open(contam, "w")
-        outmessage = "S: {} has been predicted as\t{}\twhich is not currently supported in MGT\n".format(strain,
-                                                                                                        prediction)
+        outmessage = "S: {} has been predicted as\t{}\twhich does not match '{}'\n".format(strain,prediction,args.serotype)
         outc.write(outmessage)
         outc.close()
         shutil.copy(rename_skesa, serovar_fail)
