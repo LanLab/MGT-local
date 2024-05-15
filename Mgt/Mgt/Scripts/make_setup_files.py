@@ -263,6 +263,8 @@ def make_schemesInfo(args,locils):
         scheme = "MGT"+str(schemeno)
         schemes.append(scheme)
         schemeloci = set(open(schemeaccfile,"r").read().splitlines())
+        schemelocitouse = list(sorted(list(schemeloci)))
+        schemelocitouse = [x.replace("_","") for x in schemelocitouse]
         usedloci.union(schemeloci)
 
         intersect = list(schemeloci.intersection(alllociset))
@@ -276,8 +278,8 @@ def make_schemesInfo(args,locils):
             os.makedirs(apfolder)
         outapfile = apfolder + f"{scheme}_gene_profiles.txt"
         outap = open(outapfile,"w")
-        locus_str = "\t".join(list(schemeloci))
-        allele_str = "\t".join(["1"]*len(list(schemeloci)))
+        locus_str = "\t".join(schemelocitouse)
+        allele_str = "\t".join(["1"]*len(schemelocitouse))
         outap.write(f"ST\tdST\t{locus_str}\n1\t0\t{allele_str}\n")
         outap.close()
     outf.close()
@@ -429,9 +431,9 @@ def make_db_folders(settings,args):
             os.mkdir(folder)
 def main():
     args = parseargs()
-    settings=load_settings(args)
+    # settings=load_settings(args)
     maketmp(args)
-    make_db_folders(settings,args)
+    # make_db_folders(settings,args)
     make_refjson(args)
     locils = make_posinref(args)
     schemes = make_schemesInfo(args,locils)
