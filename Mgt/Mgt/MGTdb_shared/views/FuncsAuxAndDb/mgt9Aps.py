@@ -107,13 +107,13 @@ def getMgtIdColNum(list_colsInfo):
 
 
 def getLargestSchemeId(org): 
-	Tables, Mgt = getModels(org)
+	Tables_ap, Mgt = getModels(org)
 	largestScheme = Tables_ap.objects.filter(table_num=0).order_by('-display_order').first() 
 	return (largestScheme.scheme_id, largestScheme.table_name) 
 
 
 def getTablesMgt9AsList(largestSchemeId, org):
-	Tables, Mgt = getModels(org)
+	Tables_ap, Mgt = getModels(org)
 	tablesMgt9Res = Tables_ap.objects.filter(scheme_id=largestSchemeId).order_by('table_num').values_list('table_name')
 
 	tablesMgt9 = [item[0] for item in tablesMgt9Res]
@@ -245,7 +245,7 @@ def buildQueryAndGetData(tablesMgt9, list_ap9Id, org):
 		queryStr = queryStr + ' and ' + tablesMgt9[i] + '.main_id = id'
 
 
-	(theAP9, columns) = rawQueries.executeQuery_table(queryStr)
+	(theAP9, columns) = rawQueries.executeQuery_table(queryStr,org)
 	return (theAP9, columns);
 
 def getTheHeader(tablesMgt9, org):
@@ -255,7 +255,7 @@ def getTheHeader(tablesMgt9, org):
 	list_cols = [];
 	for i in range(0, len(tablesMgt9)):
 		queryStr = f'select * from "{org}_' + tablesMgt9[i] + '" where false;'
-		(theData, theCols) = rawQueries.executeQuery_table(queryStr)
+		(theData, theCols) = rawQueries.executeQuery_table(queryStr,org)
 		list_cols = list_cols + theCols;
 		# print(theCols);
 

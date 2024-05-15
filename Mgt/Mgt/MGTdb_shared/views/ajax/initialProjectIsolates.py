@@ -181,7 +181,7 @@ def page(request, org):
 
 		# theCsvBuf = makeCsvString.convertToCsv(list_colsInfo, isolates)
 		# return theCsvBuf
-		(outstring, resMr) = makeCsv_andSendToMr(isolates, request.user.is_authenticated, org)
+		(outstring, resMr) = makeCsv_andSendToMr(isolates, request.user.is_authenticated, list_colsInfo, org)
 		# outstring = makeCsv_microreact(isolates, request.user.is_authenticated, list_colsInfo)
 		return JsonResponse({'outString': outstring, 'resMr': resMr})
 
