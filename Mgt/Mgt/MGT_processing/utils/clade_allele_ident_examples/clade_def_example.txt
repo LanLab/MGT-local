@@ -1,0 +1,6 @@
+Strain  level1clades    level2clades
+strainA 1   1
+strainB 1   1
+strainC 1   
+strainD 2   
+strainE 2   
