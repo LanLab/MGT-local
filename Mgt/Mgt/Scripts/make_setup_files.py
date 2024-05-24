@@ -431,9 +431,9 @@ def make_db_folders(settings,args):
             os.mkdir(folder)
 def main():
     args = parseargs()
-    # settings=load_settings(args)
+    settings=load_settings(args)
     maketmp(args)
-    # make_db_folders(settings,args)
+    make_db_folders(settings,args)
     make_refjson(args)
     locils = make_posinref(args)
     schemes = make_schemesInfo(args,locils)
