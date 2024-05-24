@@ -55,6 +55,10 @@ export superuseremail=""$(python -c "from $SETTINGS import SUPERUSEREMAIL; print
 
 ################################# EDIT ABOVE THIS LINE ONLY  ###############################################################
 
+os=$(uname -s)
+
+echo $db_name
+echo ${db_name}
 echo "creating database"
 dropdb -U ${dbuser} ${db_name}
 createdb -U ${dbuser} ${db_name}
@@ -77,7 +81,16 @@ mgt_home=$(pwd)'/'
 cp -r Blankdb ${appname}
 
 # Replace 'Blankdb' with '$appname' in apps.py
-sed -i "s/Blankdb/$appname/g" $appname/apps.py
+
+if [ "$os" = "Darwin" ]; then
+    sed -i '' "s/Blankdb/$appname/g" $appname/apps.py
+elif [ "$os" = "Linux" ]; then
+    sed -i "s/Blankdb/$appname/g" $appname/apps.py
+else
+    sed -i "s/Blankdb/$appname/g" $appname/apps.py
+fi
+
+#
 
 echo $appname/apps.py
 
@@ -124,8 +137,14 @@ python Scripts/setUpApsAndMgt.py ./ Mgt $appname $ref_files"tables_aps.txt" $set
 echo -e "from django.db import models\nfrom .defModels import *\nfrom .autoGenCcs import *\n\n\n$(cat ./$appname'/models/autoGenAps.py')" > ./$appname"/models/autoGenAps.py"
 sleep 4
 
+if [ "$os" = "Darwin" ]; then
+    sed -i '' "s/#replace//g" ./$appname""/models/projModels.py
+elif [ "$os" = "Linux" ]; then
+    sed -i 's/#replace//g' ./$appname""/models/projModels.py
+else
+    sed -i 's/#replace//g' ./$appname""/models/projModels.py
+fi
 
-sed -i 's/#replace//g' ./$appname""/models/projModels.py
 #cd ../
 python manage.py makemigrations --settings $settings_prefix $appname
 #read  -p "Press enter after fixing ap_N migration order problem" mainmenuinput
@@ -164,7 +183,15 @@ else
     echo "Superuser '$superusername' already exists. Skipping superuser creation."
 fi
 
-sed -i "s/#replace//g" $mgt_home"/$appname/models/projModels.py"
+if [ "$os" = "Darwin" ]; then
+    sed -i '' "s/#replace//g" $mgt_home"/$appname/models/projModels.py"
+elif [ "$os" = "Linux" ]; then
+    sed -i "s/#replace//g" $mgt_home"/$appname/models/projModels.py"
+else
+    sed -i "s/#replace//g" $mgt_home"/$appname/models/projModels.py"
+fi
+
+
 python manage.py makemigrations --settings $settings_prefix $appname
 python manage.py migrate --settings $settings_prefix --database=$db_name
 sleep 2
