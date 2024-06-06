@@ -112,16 +112,25 @@ def maketmp(args):
     snp.close()
 
 def make_refjson(args):
-    chromno = len(list(SeqIO.to_dict(SeqIO.parse(args.refgenome,"fasta")).keys()))
-    refpath = args.refgenome.replace(" ","\ ")
+    chromd = SeqIO.to_dict(SeqIO.parse(args.refgenome,"fasta"))
+    # refpath = args.refgenome.replace(" ","\ ")
+    chromls = []
+    chromno = 0
+    for i in chromd:
+        tmpref = f"{args.temp}/ref_{i}.fasta"
+        chromseq = chromd[i]
+        SeqIO.write(chromseq,tmpref,"fasta")
+        chromno+=1
+        chromls.append(f'                            "number": {chromno},\n                            "loc_and_filename": "{tmpref}"\n')
+
+    chromstr = '},{'.join(chromls)
     outstring = f"""{{
             "identifier":"{args.dbname}",
             "organism":"{args.species}",
             "description": "",
             "chromosomes": [
                     {{
-                            "number": {chromno},
-                            "loc_and_filename": "{refpath}"
+{chromstr}
                     }}
             ]
     }}"""
